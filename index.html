@@ -1,0 +1,3272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediTrack — Medication Reminder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  /* ── Brand palette ── */
+  --sage:        #C0392B;
+  --sage-lt:     #E74C3C;
+  --sage-light:  #E74C3C;
+  --sage-pale:   rgba(192,57,43,0.10);
+  --sage-mid:    rgba(192,57,43,0.28);
+  --sky:         #1A3A7A;
+  --sky-light:   #2D5EB8;
+  --sky-pale:    rgba(26,58,122,0.10);
+  --amber:       #B8720F;
+  --amber-pale:  rgba(184,114,15,0.12);
+  --rose:        #B03030;
+  --rose-pale:   rgba(176,48,48,0.10);
+  --teal:        #0E7C6B;
+  --teal-pale:   rgba(14,124,107,0.10);
+
+  /* ── Surfaces (light theme) ── */
+  --bg:          #F2F4F8;
+  --white:       #FFFFFF;
+  --cream:       #F8F9FC;
+  --cream-dk:    #EDF0F5;
+  --surface:     #FFFFFF;
+  --surface-2:   #F0F2F7;
+  --surface-3:   #E5E8F0;
+  --surface-4:   #FCFBF6;
+
+  /* ── Section accent surfaces ── */
+  --sched-bg:    #EEF4FF;
+  --history-bg:  #F0FBF8;
+  --portal-bg:   #FFF8EE;
+  --settings-bg: #F6F0FF;
+  --reminder-bg: #FFF5F0;
+
+  /* ── Text ── */
+  --txt-h:       #1A2035;
+  --txt-b:       #374151;
+  --txt-m:       #5C6E82;
+  --txt-s:       #8A9BB0;
+  --txt-muted:   #B8C4D0;
+  --txt-soft:    #8A9BB0;
+  --text-head:   #1A2035;
+  --text-body:   #374151;
+  --text-mid:    #5C6E82;
+  --text-soft:   #8A9BB0;
+  --text-muted:  #B8C4D0;
+
+  /* ── Borders ── */
+  --bdr:         rgba(60,80,110,0.14);
+  --bdr-m:       rgba(60,80,110,0.26);
+  --border:      rgba(60,80,110,0.14);
+  --border-mid:  rgba(192,57,43,0.25);
+
+  /* ── Shadows ── */
+  --sh-xs:       0 1px 3px rgba(0,0,0,0.08);
+  --sh-sm:       0 2px 10px rgba(0,0,0,0.08);
+  --sh-md:       0 6px 22px rgba(0,0,0,0.11);
+  --sh-lg:       0 14px 42px rgba(0,0,0,0.13);
+  --shadow-xs:   0 1px 3px rgba(0,0,0,0.08);
+  --shadow-sm:   0 2px 10px rgba(0,0,0,0.08);
+  --shadow-md:   0 6px 22px rgba(0,0,0,0.11);
+  --shadow-lg:   0 14px 42px rgba(0,0,0,0.13);
+  --shadow-glow: 0 0 0 3px rgba(192,57,43,0.14);
+
+  /* ── Radii ── */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r:    16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+
+  /* ── Layout ── */
+  --sw:          272px;
+  --sidebar-w:   272px;
+  --topbar-h:    64px;
+
+  /* ── Motion ── */
+  --ease:   cubic-bezier(0.4, 0, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+[data-theme="dark"] {
+  --bg:          #070A0F;
+  --white:       #111827;
+  --cream:       #141C2A;
+  --cream-dk:    #1A2235;
+  --surface:     #0F172A;
+  --surface-2:   #111C31;
+  --surface-3:   #1B2638;
+  --surface-4:   #111827;
+  --txt-h:       #EEF3FF;
+  --txt-b:       #CAD5E4;
+  --txt-m:       #94A3B8;
+  --txt-s:       #64748B;
+  --txt-muted:   #3D4A5F;
+  --txt-soft:    #64748B;
+  --text-head:   #EEF3FF;
+  --text-body:   #CAD5E4;
+  --text-mid:    #94A3B8;
+  --text-soft:   #64748B;
+  --text-muted:  #3D4A5F;
+  --bdr:         rgba(148,163,184,0.14);
+  --bdr-m:       rgba(148,163,184,0.26);
+  --border:      rgba(148,163,184,0.14);
+  --border-mid:  rgba(231,76,60,0.28);
+  --sh-xs:       0 1px 3px rgba(0,0,0,0.28);
+  --sh-sm:       0 2px 8px rgba(0,0,0,0.25);
+  --sh-md:       0 6px 20px rgba(0,0,0,0.32);
+  --sh-lg:       0 12px 40px rgba(0,0,0,0.42);
+  --shadow-xs:   0 1px 3px rgba(0,0,0,0.28);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.25);
+  --shadow-md:   0 6px 20px rgba(0,0,0,0.32);
+  --shadow-lg:   0 12px 40px rgba(0,0,0,0.42);
+  --shadow-glow: 0 0 0 3px rgba(231,76,60,0.18);
+  --sage-pale:   rgba(192,57,43,0.13);
+  --sky-pale:    rgba(26,58,122,0.22);
+  --amber:       #D49B45;
+  --amber-pale:  rgba(212,155,69,0.14);
+  --rose-pale:   rgba(231,76,60,0.14);
+  --sage-mid:    rgba(231,76,60,0.34);
+  --sched-bg:    #111C2E;
+  --history-bg:  #0D1E1A;
+  --portal-bg:   #1E1810;
+  --settings-bg: #160E22;
+  --reminder-bg: #1E130D;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  /* background: var(--bg); */
+  color: var(--text-body);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  /* transition: background 0.3s, color 0.3s;  */
+}
+
+/* ══════════════════════════════════════
+   AUTH SCREEN  (login + signup)
+══════════════════════════════════════ */
+#auth-screen{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  background:linear-gradient(145deg,#EDF4EF 0%,#F7F4EF 40%,#EDF1F8 100%);
+  position:relative;overflow:hidden;
+}
+#auth-screen::after{content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:
+}
+#auth-screen::before{content:'';position:absolute;width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(74,135,184,.07) 0%,transparent 70%);bottom:-100px;left:-100px;pointer-events:none}
+
+.auth-card{
+  background:var(--surface-4);border-radius:var(--r-lg);
+  box-shadow:var(--sh-lg),0 0 0 1px rgba(90,138,106,.08);
+  width:100%;max-width:500px;padding:48px 44px;
+  position:relative;z-index:1;
+  animation:cardRise .6s var(--spring) both;
+}
+@keyframes cardRise{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.auth-brand{text-align:center;margin-bottom:32px}
+.med-logo{
+  width:85px;height:90px;
+  border-radius:18px;display:flex;align-items:center;justify-content:center;
+  margin-left: 165px;
+  font-size:28px;
+  animation:logoFloat .8s var(--spring) .2s both;
+}
+
+.logo-med{
+  width:85px;height:90px;
+  border-radius:18px;display:flex;align-items:center;justify-content:center;
+  margin-left: 8px;
+  font-size:28px;
+  animation:logoFloat .8s var(--spring) .2s both;
+}
+
+@keyframes logoFloat{from{opacity:0;transform:translateY(-12px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
+.auth-title{font-family:'Lora',serif;font-size:28px;font-weight:700;color:var(--txt-h);letter-spacing:-.5px}
+.auth-sub{font-size:15px;color:var(--txt-s);margin-top:4px}
+
+/* Auth tab switcher */
+.auth-tabs{
+  display:flex;background:var(--cream-dk);border-radius:var(--r-sm);padding:4px;
+  margin-bottom:28px;border:1px solid var(--bdr);gap:4px;
+}
+.auth-tab{
+  flex:1;text-align:center;padding:10px;border-radius:6px;
+  font-size:14px;font-weight:600;cursor:pointer;color:var(--txt-s);
+  transition:all .2s var(--ease);user-select:none;
+}
+.auth-tab.active{background:var(--white);color:var(--txt-h);box-shadow:var(--sh-sm)}
+
+.auth-panel{display:none;animation:panelIn .3s var(--ease)}
+.auth-panel.active{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+
+/* Divider */
+.auth-divider{text-align:center;position:relative;margin:16px 0}
+.auth-divider::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--bdr)}
+.auth-divider span{background:var(--white);padding:0 12px;position:relative;font-size:12px;color:var(--txt-muted)}
+
+/* Existing accounts list */
+.account-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.account-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 16px;
+  background:var(--cream);border:1.5px solid var(--bdr);
+  border-radius:var(--r);cursor:pointer;
+  transition:all .2s var(--ease);user-select:none;
+}
+.account-item:hover{border-color:var(--sage-mid);background:var(--sage-pale);transform:translateX(3px)}
+.account-item .acc-av{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sage-mid),var(--sage));
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.account-item .acc-info{flex:1}
+.account-item .acc-name{font-weight:600;font-size:14px;color:var(--txt-h)}
+.account-item .acc-meta{font-size:12px;color:var(--txt-s)}
+.account-item .acc-arrow{font-size:16px;color:var(--txt-muted)}
+
+/* Signup steps */
+.signup-steps{position:relative}
+.signup-step{display:none;animation:stepIn .3s var(--ease)}
+.signup-step.active{display:block}
+@keyframes stepIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
+
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:24px}
+.s-dot{width:8px;height:8px;border-radius:4px;background:var(--bdr);transition:all .3s var(--ease)}
+.s-dot.active{background:var(--sage);width:24px}
+.s-dot.done{background:var(--sage-mid)}
+
+.step-head{font-family:'Lora',serif;font-size:19px;font-weight:600;color:var(--txt-h);margin-bottom:4px}
+.step-desc{font-size:14px;color:var(--txt-s);margin-bottom:22px;line-height:1.5}
+
+/* Mode selector cards */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.mode-card{
+  border:2px solid var(--bdr);border-radius:var(--r);padding:20px 14px;
+  cursor:pointer;text-align:center;transition:all .22s var(--ease);
+  background:var(--white);user-select:none;
+}
+.mode-card:hover{border-color:var(--sage-mid);background:var(--sage-pale);transform:translateY(-2px);box-shadow:var(--sh-sm)}
+.mode-card.sel{border-color:var(--sage);background:var(--sage-pale);box-shadow:0 0 0 3px rgba(90,138,106,.15)}
+.mode-card .m-icon{font-size:30px;margin-bottom:8px}
+.mode-card .m-lbl{font-size:14px;font-weight:600;color:var(--txt-h)}
+.mode-card .m-desc{font-size:12px;color:var(--txt-s);margin-top:3px;line-height:1.4}
+
+.cap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.cap-card{
+  border:2px solid var(--bdr);border-radius:var(--r);padding:16px;
+  cursor:pointer;text-align:center;transition:all .2s var(--ease);user-select:none;
+}
+.cap-card:hover{border-color:var(--sage-mid);background:var(--sage-pale)}
+.cap-card.sel{border-color:var(--sage);background:var(--sage-pale)}
+.cap-card .c-icon{font-size:26px;margin-bottom:6px}
+.cap-card .c-lbl{font-size:13px;font-weight:600;color:var(--txt-h)}
+.cap-card .c-desc{font-size:11px;color:var(--txt-s);margin-top:2px}
+
+/* ══════════════════════════════════════
+   FORMS
+══════════════════════════════════════ */
+.form-group{margin-bottom:16px}
+.form-group label{
+  display:block;font-size:12px;font-weight:600;color:var(--txt-m);
+  margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea{
+  width:100%;background:var(--cream);border:1.5px solid var(--bdr);
+  border-radius:var(--r-sm);color:var(--txt-h);
+  font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 13px;
+  outline:none;transition:border-color .2s var(--ease),box-shadow .2s,background .2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+  border-color:var(--sage);background:var(--white);
+  box-shadow:0 0 0 3px rgba(90,138,106,.12);
+}
+.form-group textarea{resize:vertical;min-height:80px}
+select{appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235C6E63' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;}
+select option{background:var(--white)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input::placeholder{color:var(--txt-muted)}
+.input-error{border-color:var(--rose)!important;box-shadow:0 0 0 3px rgba(192,86,86,.1)!important}
+.field-error{font-size:12px;color:var(--rose);margin-top:4px;display:none}
+.field-error.show{display:block}
+
+/* Password field */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:44px}
+.pw-toggle{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;font-size:16px;color:var(--txt-s);
+  transition:color .15s;
+}
+.pw-toggle:hover{color:var(--txt-m)}
+
+/* ══════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 22px;border-radius:var(--r-sm);
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;border:none;
+  transition:all .22s var(--ease);
+  white-space:nowrap;user-select:none;
+  position:relative;overflow:hidden;
+}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .15s}
+.btn:active::after{background:rgba(255,255,255,.15)}
+.btn-primary{background:var(--sage);color:#fff;box-shadow:0 2px 8px rgba(90,138,106,.3)}
+.btn-primary:hover{background:var(--sage-lt);transform:translateY(-1px);box-shadow:0 4px 14px rgba(90,138,106,.35)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{background:var(--white);color:var(--sage);border:1.5px solid var(--sage-mid)}
+.btn-secondary:hover{background:var(--sage-pale);border-color:var(--sage)}
+.btn-sky{background:var(--sage);color:#fff;box-shadow:0 2px 8px rgba(90,138,106,.3)}
+.btn-sky:hover{background:var(--sage-lt);transform:translateY(-1px);box-shadow:0 4px 14px rgba(90,138,106,.35)}
+.btn-danger{background:var(--rose-pale);color:var(--rose);border:1.5px solid rgba(192,86,86,.3)}
+.btn-danger:hover{background:rgba(192,86,86,.18);border-color:var(--rose)}
+.btn-ghost{background:transparent;color:var(--sage);border:1.5px solid var(--sage-mid)}
+.btn-ghost:hover{background:var(--sage-pale);border-color:var(--sage)}
+.btn-sm{padding:8px 14px;font-size:13px}
+.btn-icon{padding:8px;border-radius:var(--r-sm)}
+.btn-full{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* ══════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════ */
+#app-shell{display:none;height:100vh;overflow:hidden;flex-direction:row}
+#app-shell.visible{display:flex}
+
+/* SIDEBAR */
+#sidebar{
+  width:var(--sw);background:var(--white);
+  border-right:1.5px solid var(--bdr);
+  display:flex;flex-direction:column;flex-shrink:0;
+  z-index:20;box-shadow:2px 0 12px rgba(60,80,65,.05);
+  animation:sideIn .4s var(--ease) both;
+}
+@keyframes sideIn{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.sidebar-header{padding:26px 20px 20px;border-bottom:1.5px solid var(--cream-dk)}
+.sidebar-brand{display:flex;align-items:center;gap:12px}
+.brand-mark{
+  width:42px;height:42px;background:linear-gradient(135deg,var(--sage) 0%,var(--sky) 100%);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 3px 10px rgba(90,138,106,.25);flex-shrink:0;
+}
+.brand-text .bname{font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--txt-h);letter-spacing:-.3px}
+.brand-text .btag{font-size:11px;color:var(--txt-s)}
+.sidebar-nav{flex:1;padding:14px 12px;overflow-y:auto}
+.nav-sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--txt-muted);padding:10px 8px 5px;font-weight:600}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:11px 12px;
+  border-radius:var(--r-sm);cursor:pointer;color:var(--txt-m);
+  font-size:14px;font-weight:500;transition:all .2s var(--ease);
+  margin-bottom:2px;position:relative;user-select:none;
+}
+.nav-item .ni{font-size:18px;width:22px;text-align:center;flex-shrink:0}
+.nav-item .nl{flex:1}
+.nav-badge{background:var(--amber);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 7px;border-radius:10px;min-width:20px;text-align:center;display:none}
+.nav-badge.show{display:block}
+.nav-item:hover{background:var(--sage-pale);color:var(--sage)}
+.nav-item.active{background:var(--sage-pale);color:var(--sage);font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:25%;bottom:25%;
+  width:3px;background:var(--sage);border-radius:0 2px 2px 0}
+.sidebar-footer{padding:14px 16px;border-top:1.5px solid var(--cream-dk)}
+.user-chip{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--cream);border-radius:var(--r-sm);cursor:pointer;
+  transition:background .2s;border:1px solid var(--bdr);
+}
+.user-chip:hover{background:var(--cream-dk)}
+.u-av{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sage-mid),var(--sage));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.u-name{font-size:13px;font-weight:600;color:var(--txt-h)}
+.u-role{font-size:11px;color:var(--txt-s)}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--sage);
+  margin-left:auto;flex-shrink:0;animation:breathe 2.5s ease infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(90,138,106,.4)}50%{box-shadow:0 0 0 4px rgba(90,138,106,.1)}}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--cream);
+  animation:mainIn .4s var(--ease) .1s both}
+@keyframes mainIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+#topbar{
+  height:66px;background:var(--white);border-bottom:1.5px solid var(--bdr);
+  display:flex;align-items:center;padding:0 30px;gap:14px;flex-shrink:0;
+  box-shadow:var(--sh-sm);
+}
+.topbar-title{font-family:'Lora',serif;font-size:20px;font-weight:600;color:var(--txt-h);flex:1}
+.topbar-clock{
+  font-size:18px;font-weight:700;color:var(--txt-h);
+  font-family:'Lora',serif;letter-spacing:1px;
+  background:var(--cream);border:1.5px solid var(--sage-mid);border-radius:20px;
+  padding:5px 16px;min-width:110px;text-align:center;
+}
+.tb-btn{
+  width:38px;height:38px;background:var(--cream);border:1.5px solid var(--bdr);
+  border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;transition:all .2s var(--ease);position:relative;
+}
+.tb-btn:hover{background:var(--cream-dk);border-color:var(--bdr-m)}
+.notif-pip{
+  position:absolute;top:-4px;right:-4px;
+  width:17px;height:17px;background:var(--amber);color:#fff;
+  border-radius:50%;font-size:9px;font-weight:700;
+  display:none;align-items:center;justify-content:center;
+  border:2px solid var(--white);
+}
+.notif-pip.show{display:flex}
+.topbar-action{
+  display:flex;align-items:center;gap:8px;padding:9px 16px;
+  background:var(--sage);color:#fff;border-radius:var(--r-sm);
+  font-size:13px;font-weight:600;cursor:pointer;border:none;
+  transition:all .2s var(--ease);font-family:'DM Sans',sans-serif;
+}
+.topbar-action:hover{background:var(--sage-lt);transform:translateY(-1px);box-shadow:0 3px 10px rgba(90,138,106,.25)}
+
+#content{flex:1;overflow-y:auto;padding:30px;scrollbar-width:thin;scrollbar-color:var(--bdr-m) transparent}
+#content::-webkit-scrollbar{width:6px}
+#content::-webkit-scrollbar-thumb{background:var(--bdr-m);border-radius:3px}
+
+/* ══════════════════════════════════════
+   PAGES
+══════════════════════════════════════ */
+.page{display:none}
+.page.active{display:block;animation:pageIn .35s var(--ease) both}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════ */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.mb-24{margin-bottom:24px}
+.mb-20{margin-bottom:20px}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.sec-title{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--txt-h);letter-spacing:-.3px}
+
+/* ══════════════════════════════════════
+   CARDS
+══════════════════════════════════════ */
+.card{
+  background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:24px;box-shadow:var(--sh-sm);
+  transition:box-shadow .25s var(--ease),border-color .2s;
+}
+.card:hover{box-shadow:var(--sh-md)}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--txt-s);font-weight:600;margin-bottom:14px}
+
+/* STAT */
+.stat-card{
+  background:var(--surface-3);border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:22px;position:relative;overflow:hidden;transition:all .25s var(--ease);
+}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.stat-card .ab{position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r) var(--r)}
+.stat-card .sl{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--txt-s);font-weight:600}
+.stat-card .sv{font-family:'Lora',serif;font-size:36px;font-weight:700;color:var(--txt-h);line-height:1;margin:8px 0 4px}
+.stat-card .ss{font-size:13px;color:var(--txt-s)}
+.stat-card .si{position:absolute;right:16px;top:16px;font-size:26px;opacity:.16}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.b-sage{background:var(--sage-pale);color:var(--sage);border:1px solid var(--sage-mid)}
+.b-sky{background:var(--sky-pale);color:var(--sky);border:1px solid rgba(74,135,184,.25)}
+.b-amber{background:var(--amber-pale);color:var(--amber);border:1px solid rgba(212,129,58,.25)}
+.b-rose{background:var(--rose-pale);color:var(--rose);border:1px solid rgba(192,86,86,.2)}
+.b-muted{background:var(--cream-dk);color:var(--txt-s);border:1px solid var(--bdr)}
+
+/* MED ITEMS */
+.med-list{display:flex;flex-direction:column;gap:12px}
+.med-item{
+  background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:18px 20px;display:flex;align-items:center;gap:16px;
+  transition:all .25s var(--ease);position:relative;overflow:hidden;
+}
+.med-item:hover{border-color:var(--bdr-m);box-shadow:var(--sh-md);transform:translateX(4px)}
+.med-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.med-item.s-active::before{background:var(--sky)}
+.med-item.s-taken::before{background:var(--sky)}
+.med-item.s-missed::before{background:var(--sky)}
+.med-item.s-upcoming::before{background:var(--sky)}
+.med-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.mt-tablet{background:var(--sage-pale)}
+.mt-capsule{background:var(--sky-pale)}
+.mt-liquid{background:var(--amber-pale)}
+.mt-other{background:var(--cream-dk)}
+.med-det{flex:1}
+.med-name{font-weight:600;font-size:15px;color:var(--txt-h);margin-bottom:2px}
+.med-meta{font-size:13px;color:var(--txt-s)}
+.med-times{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tch{background:var(--cream);border:1px solid var(--bdr);border-radius:20px;padding:4px 11px;font-size:12px;color:var(--txt-m);display:flex;align-items:center;gap:4px}
+.tch.upcoming{background:var(--amber-pale);border-color:rgba(212,129,58,.3);color:var(--amber);font-weight:600}
+.tch.taken{background:var(--sage-pale);border-color:var(--sage-mid);color:var(--sage);text-decoration:line-through}
+.tch.overdue{background:var(--rose-pale);border-color:rgba(192,86,86,.2);color:var(--rose)}
+.med-acts{display:flex;gap:8px;flex-shrink:0;align-items:center}
+.check-btn{
+  width:40px;height:40px;border-radius:50%;border:2px solid var(--sage);
+  background:transparent;color:var(--sage);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;transition:all .22s var(--spring);
+}
+.check-btn:hover{background:var(--sage);color:#fff;transform:scale(1.12);box-shadow:0 3px 12px rgba(90,138,106,.35)}
+.check-btn.done{background:var(--sage);color:#fff;border-color:var(--sage)}
+
+/* ALERTS */
+.alert-item{
+  border-radius:var(--r);padding:15px 17px;display:flex;align-items:flex-start;gap:12px;
+  margin-bottom:12px;border:1.5px solid;
+  animation:alertSlide .3s var(--ease);
+  overflow:hidden;
+}
+@keyframes alertSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.al-info{background:var(--sky-pale);border-color:rgba(74,135,184,.25)}
+.al-warn{background:var(--amber-pale);border-color:rgba(212,129,58,.25)}
+.al-danger{background:var(--rose-pale);border-color:rgba(192,86,86,.2)}
+.al-ok{background:var(--sage-pale);border-color:var(--sage-mid)}
+.al-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.al-body{flex:1}
+.al-title{font-weight:600;font-size:14px;color:var(--txt-h)}
+.al-sub{font-size:13px;color:var(--txt-m);margin-top:2px}
+.al-time{font-size:12px;color:var(--txt-s);white-space:nowrap}
+
+/* PROGRESS */
+.progress-track{height:8px;background:var(--cream-dk);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .7s var(--ease)}
+.pf-sage{background:var(--sage)}
+.pf-sky{background:var(--sky)}
+.pf-amber{background:var(--amber)}
+.pf-rose{background:var(--rose)}
+
+/* TABS */
+.tab-bar{display:flex;gap:4px;background:var(--cream-dk);border-radius:var(--r-sm);padding:4px;margin-bottom:22px;border:1px solid var(--bdr)}
+.tab-item{flex:1;text-align:center;padding:9px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;color:var(--txt-s);transition:all .2s var(--ease);user-select:none}
+.tab-item:hover{color:var(--txt-m)}
+.tab-item.active{background:var(--white);color:var(--txt-h);font-weight:600;box-shadow:var(--sh-sm)}
+
+/* ════════════════════════════════════════════════
+    DARK MODE
+════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:          #070A0F;
+  --surface:     #0F172A;
+  --surface-2:   #111C31;
+  --surface-3:   #1B2638;
+  --text-head:   #EEF3EF;
+  --text-body:   #CAD5E4;
+  --text-mid:    #94A3B8;
+  --text-soft:   #64748B;
+  --text-muted:  #3D4A5F;
+  --border:      rgba(148,163,184,0.14);
+  --border-mid:  rgba(231,76,60,0.28);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.25);
+  --shadow-md:   0 6px 20px rgba(0,0,0,0.32);
+  --shadow-lg:   0 12px 40px rgba(0,0,0,0.42);
+  --sage-pale:   rgba(192,57,43,0.13);
+  --sky-pale:    rgba(26,58,122,0.20);
+  --amber-pale:  rgba(212,155,69,0.14);
+  --rose-pale:   rgba(231,76,60,0.14);
+  --sage-mid:    rgba(231,76,60,0.34);
+}
+
+[data-theme="dark"] body { color: var(--text-body); }
+
+[data-theme="dark"] #auth-screen {
+    background: linear-gradient(145deg, #141A17 0%, #181E1B 40%, #141820 100%);
+}
+[data-theme="dark"] .auth-card {
+  background: var(--white);
+  box-shadow: 0 8px 40px rgba(0,0,0,.7), 0 0 0 1px rgba(90,138,106,.15);
+}
+[data-theme="dark"] .auth-title { color: var(--txt-h); }
+[data-theme="dark"] .auth-sub { color: var(--txt-s); }
+[data-theme="dark"] .step-head { color: var(--txt-h); }
+[data-theme="dark"] .step-desc { color: var(--txt-soft); }
+[data-theme="dark"] .acc-name { color: var(--txt-h) !important; }
+[data-theme="dark"] .acc-meta { color: var(--txt-soft) !important; }
+
+[data-theme="dark"] #sidebar {
+  background: #141B17;
+  border-right-color: var(--bdr);
+}
+[data-theme="dark"] .sidebar-header { border-bottom-color: #1F2B22; }
+[data-theme="dark"] .sidebar-footer { border-top-color: #1F2B22; }
+[data-theme="dark"] .bname { color: var(--txt-h); }
+[data-theme="dark"] .btag { color: var(--txt-s); }
+[data-theme="dark"] .nav-sec { color: #4A6055; }
+[data-theme="dark"] .nav-item { color: var(--txt-s); }
+[data-theme="dark"] .nav-item:hover { color: #82C9A0; background: rgba(90,138,106,.12); }
+[data-theme="dark"] .nav-item.active { color: #82C9A0; background: rgba(90,138,106,.15); }
+[data-theme="dark"] .nav-item.active::before { background: #82C9A0; }
+[data-theme="dark"] .u-name { color: var(--txt-h); }
+[data-theme="dark"] .u-role { color: var(--txt-s); }
+[data-theme="dark"] .user-chip { background: rgba(90,138,106,.08); border-color: var(--bdr); }
+[data-theme="dark"] .user-chip:hover { background: rgba(90,138,106,.15); }
+
+[data-theme="dark"] #topbar {
+  background: #141B17;
+  border-bottom-color: var(--bdr);
+}
+[data-theme="dark"] .topbar-title { color: var(--txt-h); }
+[data-theme="dark"] .topbar-clock { color: #82C9A0; border-color: #2C4A32; background: rgba(90,138,106,.1); }
+[data-theme="dark"] #dark-toggle { background: rgba(90,138,106,.1); border-color: var(--bdr); color: var(--txt-s); }
+[data-theme="dark"] .tb-btn { background: rgba(90,138,106,.1); border-color: var(--bdr); }
+[data-theme="dark"] .topbar-action { background: var(--sage); }
+
+[data-theme="dark"] #content { background: #161C19; }
+[data-theme="dark"] .card {
+  background: var(--white);
+  border-color: var(--bdr);
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+[data-theme="dark"] .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+[data-theme="dark"] .card-title { color: var(--txt-s); }
+[data-theme="dark"] .sec-title { color: var(--txt-h); }
+
+[data-theme="dark"] .stat-card {
+  background: var(--sky-pale);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .stat-card .sl { color: var(--txt-s); }
+[data-theme="dark"] .stat-card .sv { color: var(--txt-h); }
+[data-theme="dark"] .stat-card .ss { color: var(--txt-s); }
+
+[data-theme="dark"] .med-item {
+  background: var(--white);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .med-item:hover { border-color: var(--bdr-m); }
+[data-theme="dark"] .med-name { color: var(--txt-h); }
+[data-theme="dark"] .med-meta { color: var(--txt-s); }
+
+[data-theme="dark"] .tch { background: #1A2B1E; border-color: var(--bdr); color: var(--txt-m); }
+[data-theme="dark"] .tch.upcoming { background: var(--amber-pale); color: #E8A85A; }
+[data-theme="dark"] .tch.taken { background: var(--sage-pale); color: #82C9A0; }
+[data-theme="dark"] .tch.overdue { background: var(--rose-pale); color: #E07A7A; }
+
+[data-theme="dark"] .al-title { color: var(--txt-h); }
+[data-theme="dark"] .al-sub { color: var(--txt-m); }
+[data-theme="dark"] .al-time { color: var(--txt-s); }
+[data-theme="dark"] .al-ok { background: rgba(90,138,106,.12); border-color: rgba(90,138,106,.2); }
+[data-theme="dark"] .al-info { background: rgba(74,135,184,.1); border-color: rgba(74,135,184,.2); }
+[data-theme="dark"] .al-warn { background: rgba(212,129,58,.1); border-color: rgba(212,129,58,.2); }
+[data-theme="dark"] .al-danger { background: rgba(192,86,86,.1); border-color: rgba(192,86,86,.2); }
+
+[data-theme="dark"] .patient-card {
+  background: linear-gradient(135deg, #1A2B1E 0%, #172230 100%);
+  border-color: var(--sage-mid);
+}
+[data-theme="dark"] .pt-name-big { color: var(--txt-h); }
+[data-theme="dark"] .idf label { color: var(--txt-s); }
+[data-theme="dark"] .idf .val { color: var(--txt-h); }
+[data-theme="dark"] .blood-badge { background: var(--rose-pale); color: #E07A7A; border-color: rgba(192,86,86,.3); }
+
+[data-theme="dark"] .ec-name { color: var(--txt-h) !important; }
+[data-theme="dark"] .ec-meta { color: var(--txt-s) !important; }
+[data-theme="dark"] .ec-phone { color: #6BA3CB !important; }
+[data-theme="dark"] .ec-row { border-bottom-color: var(--bdr); }
+
+[data-theme="dark"] .mem-name { color: var(--txt-h); }
+[data-theme="dark"] .mem-sub { color: var(--txt-s); }
+[data-theme="dark"] .member-card { background: var(--white); border-color: var(--bdr); }
+
+[data-theme="dark"] .data-tbl th {
+  background: #1A2620;
+  color: var(--txt-s);
+  border-bottom-color: var(--bdr);
+}
+[data-theme="dark"] .data-tbl td { color: var(--txt-b); border-bottom-color: #1E2B22; }
+[data-theme="dark"] .data-tbl tbody tr:hover td { background: rgba(90,138,106,.06); }
+
+[data-theme="dark"] .setting-row { border-bottom-color: var(--bdr); }
+[data-theme="dark"] .setting-lbl { color: var(--txt-h); }
+[data-theme="dark"] .setting-desc { color: var(--txt-s); }
+
+[data-theme="dark"] .tab-bar {
+  background: #141B17;
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .tab-item { color: var(--txt-s); }
+[data-theme="dark"] .tab-item.active { background: var(--white); color: var(--txt-h); }
+
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,.7); }
+[data-theme="dark"] .modal {
+  background: #1F2822;
+  box-shadow: 0 16px 60px rgba(0,0,0,.7);
+  border: 1px solid var(--bdr);
+}
+[data-theme="dark"] .modal-title { color: var(--txt-h); }
+[data-theme="dark"] .modal-close { background: #1A2620; border-color: var(--bdr); color: var(--txt-s); }
+[data-theme="dark"] .modal-footer { border-top-color: var(--bdr); }
+[data-theme="dark"] .modal-close:hover { background: var(--rose-pale); color: #E07A7A; }
+
+[data-theme="dark"] .form-group label { color: var(--txt-s); }
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+  background: #161C19;
+  border-color: var(--bdr);
+  color: var(--txt-h);
+}
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+  border-color: var(--sage);
+  background: #1A2620;
+  box-shadow: 0 0 0 3px rgba(90,138,106,.18);
+}
+[data-theme="dark"] input::placeholder { color: var(--txt-muted); }
+[data-theme="dark"] select option { background: #1F2822; color: var(--txt-h); }
+
+[data-theme="dark"] .auth-tabs { background: #1A2620; border-color: var(--bdr); }
+[data-theme="dark"] .auth-tab { color: var(--txt-s); }
+[data-theme="dark"] .auth-tab.active { background: var(--white); color: var(--txt-h); }
+[data-theme="dark"] .auth-divider::before { background: var(--bdr); }
+[data-theme="dark"] .auth-divider span { background: var(--white); color: var(--txt-muted); }
+[data-theme="dark"] .account-item { background: #1A2620; border-color: var(--bdr); }
+[data-theme="dark"] .account-item:hover { background: rgba(90,138,106,.12); border-color: var(--sage-mid); }
+[data-theme="dark"] .mode-card,
+[data-theme="dark"] .cap-card { background: #1A2620; border-color: var(--bdr); }
+[data-theme="dark"] .mode-card:hover,
+[data-theme="dark"] .cap-card:hover { background: rgba(90,138,106,.12); }
+[data-theme="dark"] .mode-card.sel,
+[data-theme="dark"] .cap-card.sel { background: rgba(90,138,106,.15); border-color: var(--sage); }
+[data-theme="dark"] .m-lbl,
+[data-theme="dark"] .c-lbl { color: var(--txt-h); }
+[data-theme="dark"] .m-desc,
+[data-theme="dark"] .c-desc { color: var(--txt-s); }
+
+[data-theme="dark"] .alarm-box {
+  background: #1F2822;
+  border-color: var(--sage-mid);
+}
+[data-theme="dark"] .alarm-med { color: var(--txt-h); }
+[data-theme="dark"] .alarm-dose { color: var(--txt-m); }
+[data-theme="dark"] .alarm-note { color: var(--txt-s); }
+
+[data-theme="dark"] .toast {
+  background: #1F2822;
+  border-color: var(--bdr);
+  color: var(--txt-h);
+}
+
+[data-theme="dark"] .badge.b-muted { background: #1E2B22; color: var(--txt-s); border-color: var(--bdr); }
+[data-theme="dark"] .pt-id-txt { color: #82C9A0; }
+[data-theme="dark"] .online-dot { background: #82C9A0; }
+
+[data-theme="dark"] .cal-day { background: rgba(26,58,122,0.15); color: #6BA3CB; border-color: rgba(45,94,184,0.2); box-shadow: none; }
+[data-theme="dark"] .cal-day.other-month { opacity: .2; background: transparent; border-color: transparent; }
+[data-theme="dark"] .cal-day.today { border-color: var(--sage); color: #82C9A0; background: rgba(90,138,106,.15); }
+[data-theme="dark"] .cal-day.all-taken { background: var(--sage); color: #fff; }
+[data-theme="dark"] .cal-weekdays div { color: #6BA3CB; }
+[data-theme="dark"] .cal-month-label { color: var(--txt-h); }
+[data-theme="dark"] .cal-legend { color: var(--txt-s); }
+
+[data-theme="dark"] .sched-time-chip { background: #1A2620; border-color: var(--sage-mid); }
+[data-theme="dark"] .stc-time { color: var(--txt-h); }
+[data-theme="dark"] .tq-btn { background: #1A2620; border-color: var(--bdr); color: var(--txt-m); }
+[data-theme="dark"] .tq-btn:hover { background: rgba(90,138,106,.15); color: #82C9A0; }
+[data-theme="dark"] .tq-btn.applied { background: rgba(90,138,106,.2); color: #82C9A0; border-color: var(--sage); }
+
+[data-theme="dark"] .progress-track { background: #1A2620; }
+[data-theme="dark"] #notes-disp { color: var(--txt-m); }
+
+
+/* Dark mode overrides */
+[data-theme="dark"] #app-shell {
+  background: #0d1117;
+}
+
+[data-theme="dark"] #sidebar {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(231,76,60,0.10), transparent 26%),
+    linear-gradient(180deg, #0d1117 0%, #0b1018 100%);
+  border-right-color: rgba(148,163,184,0.13);
+}
+
+[data-theme="dark"] #main {
+  background:
+    radial-gradient(circle at 88% 6%, rgba(231,76,60,0.10), transparent 28%),
+    radial-gradient(circle at 20% 92%, rgba(26,58,122,0.22), transparent 34%),
+    #111827;
+}
+
+[data-theme="dark"] #topbar {
+  background: rgba(17,24,39,0.82);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme="dark"] .card {
+  background: rgba(17,24,39,0.76);
+  border-color: rgba(148,163,184,0.15);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.22);
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: rgba(231,76,60,0.24);
+  box-shadow: 0 22px 58px rgba(0,0,0,0.30);
+}
+
+.btn-primary,
+.topbar-action {
+  background: linear-gradient(135deg, #C0392B, #E74C3C);
+  box-shadow: 0 4px 14px rgba(192,57,43,0.34);
+}
+
+.btn-primary:hover,
+.topbar-action:hover {
+  background: linear-gradient(135deg, #D54637, #FF6656);
+  box-shadow: 0 8px 22px rgba(231,76,60,0.42);
+}
+
+/* Dark mode toggle button */
+#dark-toggle {
+  width: 38px; height: 38px;
+  background: var(--cream);
+  border: 1.5px solid var(--bdr);
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s var(--ease);
+}
+#dark-toggle:hover { background: var(--cream-dk); }
+
+/* PATIENT CARD */
+.patient-card{
+  background:linear-gradient(135deg,#EAF2EC 0%,#E5F0F8 100%);
+  border:1.5px solid var(--sage-mid);border-radius:var(--r-lg);
+  padding:28px;margin-bottom:22px;position:relative;overflow:hidden;
+}
+.patient-card::after{content:'🏥';position:absolute;right:24px;top:24px;font-size:56px;opacity:.07}
+.pt-header{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}
+.pt-av-lg{
+  width:70px;height:70px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sage),var(--sky));
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:700;color:#fff;
+  border:3px solid var(--white);box-shadow:0 4px 12px rgba(90,138,106,.25);flex-shrink:0;
+}
+.pt-name-big{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--txt-h);margin-bottom:4px}
+.pt-id-txt{font-size:13px;color:var(--sage);letter-spacing:.5px}
+.pt-id-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.idf label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--txt-s);display:block;margin-bottom:3px;font-weight:600}
+.idf .val{font-size:14px;font-weight:600;color:var(--txt-h)}
+.blood-badge{display:inline-block;background:var(--rose-pale);color:var(--rose);border:1.5px solid rgba(192,86,86,.3);border-radius:var(--r-sm);padding:4px 12px;font-size:18px;font-weight:700;font-family:'Lora',serif}
+
+/* CONTACTS */
+.ec-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--cream-dk)}
+.ec-row:last-child{border-bottom:none}
+.ec-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.ec-info{flex:1}
+.ec-name{font-size:14px;font-weight:600;color:var(--txt-h)}
+.ec-meta{font-size:12px;color:var(--txt-s)}
+.ec-phone{font-size:13px;color:var(--sky);font-weight:500}
+
+/* MEMBER CARD */
+.member-card{background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r);padding:18px;display:flex;align-items:center;gap:14px;transition:all .22s var(--ease)}
+.member-card:hover{border-color:var(--bdr-m);box-shadow:var(--sh-sm)}
+.mem-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.mem-name{font-weight:600;font-size:15px;color:var(--txt-h)}
+.mem-sub{font-size:13px;color:var(--txt-s)}
+
+/* DATA TABLE */
+.data-tbl{width:100%;border-collapse:collapse}
+.data-tbl th{text-align:left;padding:11px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--txt-s);font-weight:600;background:var(--cream);border-bottom:1.5px solid var(--bdr)}
+.data-tbl td{padding:13px 14px;font-size:14px;border-bottom:1px solid var(--cream-dk);vertical-align:middle}
+.data-tbl tbody tr:hover td{background:var(--cream)}
+.data-tbl tbody tr:last-child td{border-bottom:none}
+
+/* SETTINGS ROWS */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--cream-dk)}
+.setting-row:last-child{border-bottom:none}
+.setting-lbl{font-size:15px;font-weight:500;color:var(--txt-h)}
+.setting-desc{font-size:13px;color:var(--txt-s);margin-top:2px}
+.toggle{width:44px;height:26px;background:var(--bdr);border-radius:13px;cursor:pointer;position:relative;transition:background .25s var(--ease);flex-shrink:0;border:none}
+.toggle::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:left .25s var(--spring)}
+.toggle.on{background:var(--sage)}
+.toggle.on::after{left:21px}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(30,43,34,.4);backdrop-filter:blur(3px);z-index:1000;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--r-lg);width:100%;max-width:540px;max-height:90vh;overflow-y:auto;padding:30px;box-shadow:var(--sh-lg),0 0 0 1px rgba(90,138,106,.1);animation:modalIn .3s var(--spring)}
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-title{font-family:'Lora',serif;font-size:20px;font-weight:600;color:var(--txt-h)}
+.modal-close{width:32px;height:32px;background:var(--cream);border:1px solid var(--bdr);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--txt-s);transition:all .2s}
+.modal-close:hover{background:var(--rose-pale);color:var(--rose);border-color:rgba(192,86,86,.2)}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:18px;border-top:1.5px solid var(--cream-dk)}
+
+/* TIME SCHEDULER — specific times UI */
+.time-scheduler{margin-top:4px}
+.time-quick-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tq-btn{
+  padding:7px 14px;border-radius:20px;border:1.5px solid var(--bdr);
+  background:var(--cream);color:var(--txt-m);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .18s var(--ease);font-family:'DM Sans',sans-serif;
+}
+.tq-btn:hover{border-color:var(--sage-mid);background:var(--sage-pale);color:var(--sage)}
+.tq-btn.applied{border-color:var(--sage);background:var(--sage-pale);color:var(--sage);font-weight:600}
+.time-input-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px}
+.time-input-row .form-group{margin-bottom:0;flex:1}
+.time-add-btn{flex-shrink:0;height:44px;padding:0 16px}
+.scheduled-times{display:flex;flex-wrap:wrap;gap:8px;min-height:10px}
+.sched-time-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--white);border:1.5px solid var(--sage-mid);
+  border-radius:10px;padding:8px 14px;
+  animation:chipIn .25s var(--spring);
+}
+@keyframes chipIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.sched-time-chip .stc-time{font-size:14px;font-weight:600;color:var(--txt-h)}
+.sched-time-chip .stc-ampm{font-size:11px;color:var(--txt-s);margin-left:-4px}
+.stc-label{font-size:11px;color:var(--sage);background:var(--sage-pale);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.stc-del{
+  width:22px;height:22px;border-radius:50%;border:none;
+  background:var(--cream-dk);color:var(--txt-s);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:13px;transition:all .15s;flex-shrink:0;
+}
+.stc-del:hover{background:var(--rose-pale);color:var(--rose)}
+.times-empty{font-size:13px;color:var(--txt-muted);font-style:italic;padding:8px 0}
+
+/* CHIPS */
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--sage-pale);border:1px solid var(--sage-mid);border-radius:20px;padding:5px 12px;font-size:13px;color:var(--sage)}
+.chip .cdel{cursor:pointer;color:var(--txt-s);font-size:15px;line-height:1;margin-left:2px;transition:color .15s}
+.chip .cdel:hover{color:var(--rose)}
+
+/* ALARM */
+#alarm-overlay{display:none;position:fixed;inset:0;background:rgba(30,43,34,.55);backdrop-filter:blur(6px);z-index:3000;align-items:center;justify-content:center}
+#alarm-overlay.ringing{display:flex}
+.alarm-box{
+  background:var(--white);border:2px solid var(--sage-mid);border-radius:var(--r-lg);
+  padding:44px 40px;text-align:center;width:400px;
+  box-shadow:var(--sh-lg),0 0 60px rgba(90,138,106,.2);
+  animation:alarmPulse 1s ease infinite alternate;
+}
+@keyframes alarmPulse{from{box-shadow:var(--sh-lg),0 0 30px rgba(90,138,106,.15)}to{box-shadow:var(--sh-lg),0 0 60px rgba(90,138,106,.35)}}
+.alarm-bell{font-size:60px;margin-bottom:14px;display:block;animation:bellShake .6s ease infinite}
+@keyframes bellShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
+.alarm-med{font-family:'Lora',serif;font-size:24px;font-weight:700;color:var(--txt-h);margin-bottom:6px}
+.alarm-dose{font-size:16px;color:var(--txt-m);margin-bottom:4px}
+.alarm-note{font-size:13px;color:var(--txt-s);margin-bottom:26px}
+.alarm-btns{display:flex;gap:12px;justify-content:center}
+
+/* CALENDAR */
+#dash-calendar{
+  width:100%;
+  background: linear-gradient(135deg, #E8F4FD 0%, #EDF6FF 100%);
+  border: 1.5px solid rgba(45,94,184,0.18);
+  border-radius: var(--r);
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(26,58,122,0.08);
+}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-month-label{font-family:'Lora',serif;font-size:17px;font-weight:700;color:var(--txt-h)}
+.cal-nav-btn{
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid rgba(26,58,122,0.22);
+  background:#fff;color:var(--sky);
+  font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .18s;line-height:1;
+  box-shadow: 0 1px 4px rgba(26,58,122,0.10);
+}
+.cal-nav-btn:hover{background:var(--sky);border-color:var(--sky);color:#fff;box-shadow:0 2px 8px rgba(26,58,122,0.22)}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px}
+.cal-weekdays div{
+  text-align:center;font-size:10px;font-weight:700;color:var(--sky);
+  text-transform:uppercase;letter-spacing:.5px;padding:5px 0;
+  background:rgba(26,58,122,0.06);border-radius:4px;
+}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{
+  aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:13px;font-weight:500;color:var(--sky-light);cursor:default;
+  background:#fff;border:1.5px solid rgba(45,94,184,0.14);transition:all .15s;position:relative;
+  box-shadow: 0 1px 3px rgba(26,58,122,0.06);
+}
+.cal-day.other-month{opacity:.25;background:rgba(255,255,255,0.4);border-color:transparent;box-shadow:none}
+.cal-day.today{border-color:var(--sage);font-weight:700;color:var(--sage);background:var(--sage-pale);box-shadow:0 0 0 2px rgba(192,57,43,0.12)}
+.cal-day.all-taken{background:var(--sage);color:#fff;font-weight:700;border-color:var(--sage);box-shadow:0 2px 8px rgba(192,57,43,0.25)}
+.cal-day.partial{background:var(--amber-pale);border-color:rgba(212,129,58,.5);color:var(--amber);font-weight:600}
+.cal-day.has-missed{background:var(--rose-pale);border-color:rgba(192,86,86,.4);color:var(--rose)}
+.cal-day.has-meds:not(.all-taken):not(.partial):not(.has-missed){background:rgba(45,94,184,0.10);border-color:rgba(45,94,184,0.28);color:var(--sky)}
+.cal-day .cal-dot{width:5px;height:5px;border-radius:50%;position:absolute;bottom:3px}
+.cal-legend{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--txt-s);background:rgba(255,255,255,0.6);border-radius:8px;padding:8px 10px}
+.cal-leg-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px}
+
+/* Dark mode calendar overrides */
+[data-theme="dark"] #dash-calendar {
+  background: linear-gradient(135deg, #0D1829 0%, #111C31 100%);
+  border-color: rgba(45,94,184,0.28);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+}
+[data-theme="dark"] .cal-weekdays div {
+  background: rgba(45,94,184,0.12);
+  color: #6BA3CB;
+}
+[data-theme="dark"] .cal-nav-btn {
+  background: rgba(45,94,184,0.15);
+  border-color: rgba(45,94,184,0.3);
+  color: #6BA3CB;
+}
+[data-theme="dark"] .cal-nav-btn:hover {
+  background: var(--sky);
+  color: #fff;
+}
+[data-theme="dark"] .cal-legend {
+  background: rgba(0,0,0,0.2);
+}
+
+/* CHART */
+.chart-wrap{position:relative;height:200px}
+
+/* EMPTY */
+.empty{text-align:center;padding:52px 24px;color:var(--txt-s)}
+.empty .ei{font-size:50px;margin-bottom:12px;opacity:.4}
+.empty p{font-size:15px}
+
+/* TOAST */
+#toast-wrap{position:fixed;bottom:26px;right:26px;display:flex;flex-direction:column-reverse;gap:10px;z-index:5000}
+.toast{
+  background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:12px 17px;display:flex;align-items:center;gap:10px;
+  min-width:260px;max-width:360px;box-shadow:var(--sh-md);font-size:14px;color:var(--txt-h);
+  animation:toastIn .35s var(--spring);
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(32px) scale(.96)}to{opacity:1;transform:translateX(0) scale(1)}}
+.toast-success{border-left:4px solid var(--sage)}
+.toast-info{border-left:4px solid var(--sky)}
+.toast-warning{border-left:4px solid var(--amber)}
+.toast-error{border-left:4px solid var(--rose)}
+
+/* OFFLINE */
+#offline-bar{position:fixed;top:0;left:0;right:0;background:var(--amber);color:#fff;text-align:center;font-size:13px;font-weight:600;padding:8px;z-index:4000;display:none;animation:barSlide .3s var(--ease)}
+@keyframes barSlide{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+#offline-bar.show{display:block}
+
+/* Search */
+.search-wrap{position:relative}
+.search-wrap .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--txt-s);pointer-events:none}
+.search-wrap input{padding-left:38px}
+
+/* Icons Manipulations */
+
+.element-dashboard{
+  width: 25px;
+  height: 25px;
+}
+
+.element-patient{
+  width: 25px;
+  height: 25px;
+  padding-left: 0px;
+}
+
+.element-capsule{
+  width: 25px;
+  height: 25px;
+  padding-left: 0px;
+}
+
+.element-bell{
+  width: 25px;
+  height: 25px;
+  padding-left: 0px;
+}
+
+.element-history{
+  width: 25px;
+  height: 25px;
+  padding-left: 0px;
+}
+
+.element-portal{
+  width: 25px;
+  height: 25px;
+  padding-left: 0px;
+}
+
+.element-settings{
+  width: 25px;
+  height: 25px;
+  padding-left: 0px;
+}
+
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION-SPECIFIC COLOR THEMES
+   Each page tab gets its own accent surface so everything is
+   visually distinct from the neutral page background.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar width alias ─────────── */
+#sidebar { width: var(--sw, 272px); }
+
+/* ── Main content background ───────────────────── */
+#main   { background: var(--cream); }
+#content{ background: var(--cream); }
+
+/* ══ DASHBOARD ── Today's Schedule card ══════════════════════ */
+#page-dashboard .card:first-of-type {
+  background: linear-gradient(135deg, #EEF9F5 0%, #F5FBF8 100%);
+  border-color: rgba(14,124,107,0.20);
+}
+#page-dashboard .card:first-of-type .card-title {
+  color: #0E7C6B;
+}
+/* Today's schedule med items */
+#today-list .med-item {
+  background: #fff;
+  border-color: rgba(14,124,107,0.18);
+}
+#today-list .med-item:hover {
+  border-color: rgba(14,124,107,0.38);
+  box-shadow: 0 4px 16px rgba(14,124,107,0.12);
+}
+#today-list .med-item::before { background: #0E7C6B; }
+
+/* Stat cards ── each with its own left-bar color already via .ab;
+   give them a gentle gradient surface */
+.stat-card { background: linear-gradient(135deg, #F8F9FC 0%, #FFFFFF 100%); }
+
+/* ══ PATIENT PROFILE ── Emergency contacts / Notes ═══════════ */
+#page-patient-id .card:nth-child(1) {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFF9F9 100%);
+  border-color: rgba(176,48,48,0.18);
+}
+#page-patient-id .card:nth-child(1) .card-title { color: #B03030; }
+#page-patient-id .card:nth-child(2) {
+  background: linear-gradient(135deg, #F0F8FF 0%, #F5FBFF 100%);
+  border-color: rgba(26,58,122,0.18);
+}
+#page-patient-id .card:nth-child(2) .card-title { color: #1A3A7A; }
+
+/* Emergency contact rows */
+.ec-av { border: 2px solid rgba(176,48,48,0.18); }
+.ec-name { color: var(--txt-h); font-weight: 600; }
+.ec-phone { color: var(--sky); font-weight: 600; }
+
+/* ══ SCHEDULER ═════════════════════════════════════════════════ */
+#page-scheduler { }
+#page-scheduler > .sec-header { }
+
+/* Tab bar styling – make it look like a polished pill selector */
+.tab-bar {
+  background: #E8EDF8;
+  border: 1.5px solid rgba(26,58,122,0.16);
+  border-radius: var(--r-sm);
+  padding: 4px;
+}
+.tab-item { color: var(--sky); font-weight: 500; }
+.tab-item.active {
+  background: var(--sky);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(26,58,122,0.25);
+}
+.tab-item:hover:not(.active) {
+  background: rgba(26,58,122,0.10);
+  color: var(--sky);
+}
+
+/* Scheduled medication items in scheduler */
+#sched-active .med-item,
+#sched-all .med-item {
+  background: linear-gradient(135deg, #FAFBFF 0%, #F5F8FF 100%);
+  border-color: rgba(26,58,122,0.16);
+}
+#sched-active .med-item:hover,
+#sched-all .med-item:hover {
+  border-color: rgba(26,58,122,0.32);
+  box-shadow: 0 4px 18px rgba(26,58,122,0.12);
+  transform: translateX(4px);
+}
+#sched-active .med-item::before,
+#sched-all .med-item::before { background: var(--sky); }
+
+/* Time chips in scheduler */
+.tch {
+  background: #EEF3FF;
+  border-color: rgba(26,58,122,0.20);
+  color: var(--sky);
+}
+
+/* ══ REMINDERS ═══════════════════════════════════════════════ */
+#page-reminders #reminders-list {
+  background: linear-gradient(135deg, #FFF6F0 0%, #FFF9F5 100%) !important;
+  border-color: rgba(184,114,15,0.22) !important;
+}
+.al-warn {
+  background: linear-gradient(135deg, #FFF8EC 0%, #FFFAF2 100%);
+  border-color: rgba(184,114,15,0.28);
+}
+.al-info {
+  background: linear-gradient(135deg, #EEF5FF 0%, #F4F8FF 100%);
+  border-color: rgba(26,58,122,0.22);
+}
+
+/* ══ HISTORY LOG ═════════════════════════════════════════════ */
+#page-history .card {
+  background: linear-gradient(135deg, #F0FBF8 0%, #F8FDFB 100%);
+  border-color: rgba(14,124,107,0.18);
+}
+.data-tbl th {
+  background: linear-gradient(135deg, #E2F5F0 0%, #EAF8F3 100%);
+  color: #0E7C6B;
+  border-bottom-color: rgba(14,124,107,0.20);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+.data-tbl td { color: var(--txt-h); }
+.data-tbl tbody tr:hover td {
+  background: rgba(14,124,107,0.05);
+}
+
+/* ══ FAMILY PORTAL ═══════════════════════════════════════════ */
+/* Family & Caregivers card */
+#page-portal .card:nth-child(1) {
+  background: linear-gradient(135deg, #FFF8EE 0%, #FFFBF4 100%);
+  border-color: rgba(184,114,15,0.20);
+}
+#page-portal .card:nth-child(1) .card-title { color: #B8720F; }
+
+/* Today's Summary card */
+#page-portal .card:nth-child(2) {
+  background: linear-gradient(135deg, #EEF9F5 0%, #F5FBF8 100%);
+  border-color: rgba(14,124,107,0.20);
+}
+#page-portal .card:nth-child(2) .card-title { color: #0E7C6B; }
+
+/* Activity feed card */
+#page-portal .grid-2 + .card {
+  background: linear-gradient(135deg, #F4F0FF 0%, #F9F6FF 100%);
+  border-color: rgba(103,58,183,0.15);
+}
+#page-portal .grid-2 + .card .card-title { color: #6B3FB5; }
+
+/* Member cards */
+.member-card {
+  background: linear-gradient(135deg, #FFFDF6 0%, #FFFFFF 100%);
+  border-color: rgba(184,114,15,0.18);
+  transition: all .22s var(--ease);
+}
+.member-card:hover {
+  border-color: rgba(184,114,15,0.36);
+  box-shadow: 0 4px 18px rgba(184,114,15,0.12);
+  transform: translateX(3px);
+}
+
+/* Progress bars in summary */
+.progress-track { background: rgba(14,124,107,0.10); }
+
+/* ══ SETTINGS ════════════════════════════════════════════════ */
+/* Notifications card */
+#page-settings .card:nth-child(1) {
+  background: linear-gradient(135deg, #F0F8FF 0%, #F5FBFF 100%);
+  border-color: rgba(26,58,122,0.18);
+}
+#page-settings .card:nth-child(1) .card-title { color: #1A3A7A; }
+
+/* Preferences card */
+#page-settings .card:nth-child(2) {
+  background: linear-gradient(135deg, #F5F0FF 0%, #FAF7FF 100%);
+  border-color: rgba(103,58,183,0.16);
+}
+#page-settings .card:nth-child(2) .card-title { color: #6B3FB5; }
+
+/* Account card */
+#page-settings .card:nth-child(3) {
+  background: linear-gradient(135deg, #FFF5F0 0%, #FFF9F6 100%);
+  border-color: rgba(176,48,48,0.16);
+}
+#page-settings .card:nth-child(3) .card-title { color: #B03030; }
+
+/* About card */
+#page-settings .card:nth-child(4) {
+  background: linear-gradient(135deg, #F0FBF8 0%, #F5FDFB 100%);
+  border-color: rgba(14,124,107,0.16);
+}
+#page-settings .card:nth-child(4) .card-title { color: #0E7C6B; }
+
+/* Setting rows */
+.setting-row { border-bottom-color: var(--bdr); }
+.setting-lbl { color: var(--txt-h); font-weight: 600; }
+.setting-desc { color: var(--txt-m); }
+
+/* Toggle switch */
+.toggle { background: var(--bdr); }
+.toggle.on { background: var(--sage); }
+
+/* ══ GENERIC CARD upgrade ════════════════════════════════════ */
+.card { background: #fff; border-color: var(--bdr); box-shadow: var(--sh-sm); }
+.card-title { color: var(--txt-s); font-weight: 700; letter-spacing: 0.8px; }
+
+/* ══ MED ITEMS generic ═══════════════════════════════════════ */
+.med-name  { color: var(--txt-h); }
+.med-meta  { color: var(--txt-m); }
+
+/* ══ DARK MODE SECTION OVERRIDES ═════════════════════════════ */
+[data-theme="dark"] .tab-bar {
+  background: #0D1829;
+  border-color: rgba(45,94,184,0.28);
+}
+[data-theme="dark"] .tab-item { color: #6BA3CB; }
+[data-theme="dark"] .tab-item.active {
+  background: var(--sky);
+  color: #fff;
+}
+[data-theme="dark"] .tab-item:hover:not(.active) {
+  background: rgba(45,94,184,0.15);
+  color: #8DBFE8;
+}
+
+[data-theme="dark"] #today-list .med-item,
+[data-theme="dark"] #sched-active .med-item,
+[data-theme="dark"] #sched-all .med-item {
+  background: rgba(14,124,107,0.08);
+  border-color: rgba(14,124,107,0.22);
+}
+[data-theme="dark"] #sched-active .med-item,
+[data-theme="dark"] #sched-all .med-item {
+  background: rgba(26,58,122,0.12);
+  border-color: rgba(45,94,184,0.22);
+}
+[data-theme="dark"] .tch {
+  background: rgba(26,58,122,0.18);
+  border-color: rgba(45,94,184,0.28);
+  color: #8DBFE8;
+}
+[data-theme="dark"] .tch.upcoming { background: rgba(212,155,69,0.14); color: #E8A85A; }
+[data-theme="dark"] .tch.taken    { background: rgba(90,138,106,0.14); color: #82C9A0; }
+[data-theme="dark"] .tch.overdue  { background: rgba(231,76,60,0.14);  color: #E07A7A; }
+
+[data-theme="dark"] .stat-card {
+  background: rgba(26,58,122,0.12);
+  border-color: rgba(45,94,184,0.18);
+}
+[data-theme="dark"] .card {
+  background: rgba(15,23,42,0.85);
+  border-color: rgba(148,163,184,0.14);
+}
+
+[data-theme="dark"] #page-dashboard .card:first-of-type {
+  background: rgba(14,124,107,0.10);
+  border-color: rgba(14,124,107,0.26);
+}
+[data-theme="dark"] #page-patient-id .card:nth-child(1) {
+  background: rgba(176,48,48,0.10);
+  border-color: rgba(176,48,48,0.22);
+}
+[data-theme="dark"] #page-patient-id .card:nth-child(2) {
+  background: rgba(26,58,122,0.12);
+  border-color: rgba(45,94,184,0.22);
+}
+[data-theme="dark"] #page-history .card {
+  background: rgba(14,124,107,0.08);
+  border-color: rgba(14,124,107,0.22);
+}
+[data-theme="dark"] .data-tbl th {
+  background: rgba(14,124,107,0.14);
+  color: #4ECBA8;
+  border-bottom-color: rgba(14,124,107,0.26);
+}
+[data-theme="dark"] .data-tbl td { color: var(--txt-b); border-bottom-color: rgba(148,163,184,0.10); }
+[data-theme="dark"] .data-tbl tbody tr:hover td { background: rgba(14,124,107,0.07); }
+
+[data-theme="dark"] #page-portal .card:nth-child(1) {
+  background: rgba(184,114,15,0.10);
+  border-color: rgba(184,114,15,0.24);
+}
+[data-theme="dark"] #page-portal .card:nth-child(2) {
+  background: rgba(14,124,107,0.10);
+  border-color: rgba(14,124,107,0.24);
+}
+[data-theme="dark"] .member-card {
+  background: rgba(184,114,15,0.08);
+  border-color: rgba(184,114,15,0.20);
+}
+[data-theme="dark"] .progress-track { background: rgba(14,124,107,0.15); }
+
+[data-theme="dark"] #page-settings .card:nth-child(1) {
+  background: rgba(26,58,122,0.12);
+  border-color: rgba(45,94,184,0.22);
+}
+[data-theme="dark"] #page-settings .card:nth-child(2) {
+  background: rgba(103,58,183,0.10);
+  border-color: rgba(103,58,183,0.22);
+}
+[data-theme="dark"] #page-settings .card:nth-child(3) {
+  background: rgba(176,48,48,0.10);
+  border-color: rgba(176,48,48,0.22);
+}
+[data-theme="dark"] #page-settings .card:nth-child(4) {
+  background: rgba(14,124,107,0.10);
+  border-color: rgba(14,124,107,0.22);
+}
+[data-theme="dark"] #page-portal .grid-2 + .card {
+  background: rgba(103,58,183,0.10);
+  border-color: rgba(103,58,183,0.20);
+}
+[data-theme="dark"] #page-reminders #reminders-list {
+  background: rgba(184,114,15,0.10) !important;
+  border-color: rgba(184,114,15,0.24) !important;
+}
+[data-theme="dark"] .al-warn {
+  background: rgba(184,114,15,0.12);
+  border-color: rgba(184,114,15,0.28);
+}
+[data-theme="dark"] .al-info {
+  background: rgba(26,58,122,0.14);
+  border-color: rgba(45,94,184,0.26);
+}
+[data-theme="dark"] .setting-row { border-bottom-color: var(--bdr); }
+[data-theme="dark"] .setting-lbl { color: var(--txt-h); }
+[data-theme="dark"] .setting-desc { color: var(--txt-s); }
+
+</style>
+</head>
+<body>
+
+<!-- ── OFFLINE BAR ───────────────────────────── -->
+<div id="offline-bar">📶 You're offline — MediTrack is still fully available. Changes save locally.</div>
+
+<!-- ══════════════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+
+    <!-- Brand -->
+    <div class="auth-brand">
+      <div class="auth-logo" ><img src="images/MED LOGO.png" class="med-logo"></div>
+      <div class="auth-title">MediTrack</div>
+      <div class="auth-sub">Your trusted medication companion</div>
+    </div>
+
+    <!-- Tab switcher: Login / Sign Up -->
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login"  onclick="switchAuthTab('login')">Log In</div>
+      <div class="auth-tab"        id="tab-signup" onclick="switchAuthTab('signup')">Create Account</div>
+    </div>
+
+    <!-- ── LOGIN PANEL ──────────────────────── -->
+    <div class="auth-panel active" id="panel-login">
+      <div class="step-head" style="margin-bottom:6px;">Welcome back</div>
+      <div class="step-desc">Select your account or log in with your details.</div>
+
+      <!-- Saved accounts -->
+      <div id="saved-accounts" class="account-list"></div>
+
+      <div class="auth-divider" id="login-divider"><span>or enter manually</span></div>
+
+      <div class="form-group">
+        <label>Username or Full Name</label>
+        <input type="text" id="login-username" placeholder="Enter your name / username">
+        <div class="field-error" id="login-err">Account not found. Please sign up first.</div>
+      </div>
+      <div class="form-group">
+        <label>PIN / Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="login-pin" placeholder="Enter your PIN or password" maxlength="20">
+          <button class="pw-toggle" type="button" onclick="togglePw('login-pin',this)">👁️</button>
+        </div>
+        <div class="field-error" id="pin-err">Incorrect PIN or password.</div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()" style="margin-top:4px;">Log In →</button>
+      <p style="text-align:center;font-size:13px;color:var(--txt-s);margin-top:14px;">
+        No account yet? <span style="color:var(--sage);font-weight:600;cursor:pointer;" onclick="switchAuthTab('signup')">Create one here</span>
+      </p>
+    </div>
+
+    <!-- ── SIGNUP PANEL ─────────────────────── -->
+    <div class="auth-panel" id="panel-signup">
+
+      <!-- Step dots -->
+      <div class="step-indicator">
+        <div class="s-dot active" id="sd-0"></div>
+        <div class="s-dot" id="sd-1"></div>
+        <div class="s-dot" id="sd-2"></div>
+        <div class="s-dot" id="sd-3"></div>
+      </div>
+
+      <!-- Step 0: Who is setting up? -->
+      <div class="signup-step active" id="su-step-0">
+        <div class="step-head">Who is creating this account?</div>
+        <div class="step-desc">This helps us set up the account correctly.</div>
+        <div class="mode-grid">
+          <div class="mode-card" id="mc-patient" onclick="selectMode('patient')">
+            <div class="m-icon">🧓</div>
+            <div class="m-lbl">Patient</div>
+            <div class="m-desc">I am the patient and I can use this app myself</div>
+          </div>
+          <div class="mode-card" id="mc-caregiver" onclick="selectMode('caregiver')">
+            <div class="m-icon">🧑‍⚕️</div>
+            <div class="m-lbl">Caregiver / Family</div>
+            <div class="m-desc">I'm setting this up on behalf of a patient</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="su-0-next" onclick="suGoStep(1)" disabled>Continue →</button>
+        <p style="text-align:center;font-size:13px;color:var(--txt-s);margin-top:14px;">
+          Already have an account? <span style="color:var(--sage);font-weight:600;cursor:pointer;" onclick="switchAuthTab('login')">Log in</span>
+        </p>
+      </div>
+
+      <!-- Step 1: Patient capability -->
+      <div class="signup-step" id="su-step-1">
+        <div class="step-head" id="cap-title">Can the patient use this app independently?</div>
+        <div class="step-desc">This determines how reminders and alerts are managed.</div>
+        <div class="cap-grid">
+          <div class="cap-card" id="cc-capable" onclick="selectCap('capable')">
+            <div class="c-icon">✅</div>
+            <div class="c-lbl">Yes, I can</div>
+            <div class="c-desc">Patient operates app on their own</div>
+          </div>
+          <div class="cap-card" id="cc-incapable" onclick="selectCap('incapable')">
+            <div class="c-icon">🤝</div>
+            <div class="c-lbl">Needs Assistance</div>
+            <div class="c-desc">Caregiver manages reminders for patient</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn btn-ghost" onclick="suGoStep(0)" style="flex:1;">← Back</button>
+          <button class="btn btn-primary" id="su-1-next" onclick="suGoStep(2)" disabled style="flex:2;">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Patient info -->
+      <div class="signup-step" id="su-step-2">
+        <div class="step-head">Patient Information</div>
+        <div class="step-desc" id="step2-desc">Enter the patient's basic details.</div>
+        <div class="form-row">
+          <div class="form-group"><label>First Name *</label><input type="text" id="su-fname" placeholder="e.g. Juan"></div>
+          <div class="form-group"><label>Last Name *</label><input type="text" id="su-lname" placeholder="e.g. Dela Cruz"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date of Birth</label><input type="date" id="su-dob"></div>
+          <div class="form-group">
+            <label>Blood Type</label>
+            <select id="su-blood"><option value="">— Select —</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>Primary Condition / Diagnosis</label><input type="text" id="su-condition" placeholder="e.g. Hypertension, Diabetes Type 2"></div>
+        <div class="form-group"><label>Allergies</label><input type="text" id="su-allergies" placeholder="e.g. Penicillin, None known"></div>
+        <div class="form-group"><label>PhilHealth / Insurance No.</label><input type="text" id="su-insurance" placeholder="e.g. PhilHealth ID No."></div>
+        <div class="form-group"><label>Home Address</label><input type="text" id="su-address" placeholder="e.g. Barangay San Juan, Taytay, Rizal"></div>
+
+        <!-- Caregiver fields (shown only if caregiver mode or incapable) -->
+        <div id="caregiver-fields" style="display:none;">
+          <div class="form-group"><label>Your Name (Caregiver/Family) *</label><input type="text" id="su-cg-name" placeholder="Your full name"></div>
+          <div class="form-group">
+            <label>Your Relationship to Patient</label>
+            <select id="su-cg-rel"><option>Son</option><option>Daughter</option><option>Spouse</option><option>Sibling</option><option>Parent</option><option>Professional Caregiver</option><option>Other</option></select>
+          </div>
+          <div class="form-group"><label>Caregiver Contact No.</label><input type="tel" id="su-cg-phone" placeholder="+63 9XX XXX XXXX"></div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="suGoStep(1)" style="flex:1;">← Back</button>
+          <button class="btn btn-primary" onclick="suGoStep(3)" style="flex:2;">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Create PIN / Password -->
+      <div class="signup-step" id="su-step-3">
+        <div class="step-head">Create a PIN or Password</div>
+        <div class="step-desc">This protects your account. Use a 4–6 digit PIN or a password you can remember.</div>
+        <div class="form-group">
+          <label>Username (for login) *</label>
+          <input type="text" id="su-username" placeholder="e.g. juan123 or Juan Dela Cruz">
+          <div class="field-error" id="uname-err">This username is already taken.</div>
+        </div>
+        <div class="form-group">
+          <label>PIN / Password *</label>
+          <div class="pw-wrap">
+            <input type="password" id="su-pin" placeholder="4–6 digit PIN or a password" maxlength="20">
+            <button class="pw-toggle" type="button" onclick="togglePw('su-pin',this)">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm PIN / Password *</label>
+          <div class="pw-wrap">
+            <input type="password" id="su-pin2" placeholder="Repeat your PIN or password" maxlength="20">
+            <button class="pw-toggle" type="button" onclick="togglePw('su-pin2',this)">👁️</button>
+          </div>
+          <div class="field-error" id="pin2-err">PINs do not match.</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="suGoStep(2)" style="flex:1;">← Back</button>
+          <button class="btn btn-primary" onclick="finishSignup()" style="flex:2;">✓ Create Account</button>
+        </div>
+      </div>
+
+    </div><!-- /panel-signup -->
+  </div><!-- /auth-card -->
+</div><!-- /auth-screen -->
+
+<!-- ══════════════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════════════ -->
+<div id="app-shell">
+
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="brand-mark"><img src="images/MED LOGO.png" class="logo-med"></div>
+        <div class="brand-text">
+          <div class="bname">MediTrack</div>
+          <div class="btag">Medication Reminder</div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-sec">Overview</div>
+      <div class="nav-item active" data-page="dashboard"><span class="ni"><img src="images/home.png" class="element-dashboard"></span><span class="nl">Dashboard</span></div>
+      <div class="nav-item" data-page="patient-id"><img src="images/user.png" class="element-patient">Patient Profile</div>
+      <div class="nav-sec">Medications</div>
+      <div class="nav-item" data-page="scheduler"><img src="images/capsule.png" class="element-capsule">Med Scheduler</div>
+      <div class="nav-item" data-page="reminders"><img src="images/bell.png" class="element-bell">Reminders</div>
+      <div class="nav-item" data-page="history"><img src="images/history.png" class="element-history">History Log</div>
+      <div class="nav-sec">People</div>
+      <div class="nav-item" data-page="portal"><img src="images/family.png"  class="element-portal">Family Portal</div>
+      <div class="nav-sec">Account</div>
+      <div class="nav-item" data-page="settings"><span class="ni"><img src="images/gear.png" class="element-settings">Settings</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="u-av" id="sb-av">P</div>
+        <div>
+          <div class="u-name" id="sb-name">Patient</div>
+          <div class="u-role" id="sb-role">Patient</div>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="main">
+    <header id="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-clock" id="tb-clock">—</div>
+      <button id="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
+      <div class="tb-btn" id="notif-btn" title="Reminders">🔔<div class="notif-pip" id="notif-pip">0</div></div>
+      <button class="topbar-action" id="quick-add-btn">➕ Add Medication</button>
+    </header>
+
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="grid-4 mb-24">
+          <div class="stat-card"><div class="si">💊</div><div class="sl">Medications</div><div class="sv" id="st-total">0</div><div class="ss">Active</div><div class="ab" style="background:var(--sage)"></div></div>
+          <div class="stat-card"><div class="si">✅</div><div class="sl">Taken Today</div><div class="sv" id="st-taken">0</div><div class="ss">Confirmed doses</div><div class="ab" style="background:var(--sky)"></div></div>
+          <div class="stat-card"><div class="si">⏳</div><div class="sl">Pending</div><div class="sv" id="st-pending">0</div><div class="ss">Remaining today</div><div class="ab" style="background:var(--amber)"></div></div>
+          <div class="stat-card"><div class="si">⚠️</div><div class="sl">Missed (Week)</div><div class="sv" id="st-missed">0</div><div class="ss">This week</div><div class="ab" style="background:var(--rose)"></div></div>
+        </div>
+        <div class="grid-2 mb-24">
+          <div class="card"><div class="card-title">Today's Schedule</div><div id="today-list" class="med-list"><div class="empty"><div class="ei">💊</div><p>No medications scheduled yet.</p></div></div></div>
+          <div class="card">
+            <div class="card-title">Monthly Calendar</div>
+            <div id="dash-calendar">
+              <div class="cal-header">
+                <button class="cal-nav-btn" id="cal-prev">‹</button>
+                <div class="cal-month-label" id="cal-month-label">—</div>
+                <button class="cal-nav-btn" id="cal-next">›</button>
+              </div>
+              <div class="cal-weekdays">
+                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+              </div>
+              <div class="cal-grid" id="cal-grid"></div>
+              <div class="cal-legend">
+                <span class="cal-leg-dot" style="background:var(--sage)"></span><span>All taken</span>
+                <span class="cal-leg-dot" style="background:var(--amber)"></span><span>Partial</span>
+                <span class="cal-leg-dot" style="background:var(--rose)"></span><span>Missed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">Active Alerts</div><div id="dash-alerts"><div class="alert-item al-ok"><div class="al-icon">✅</div><div class="al-body"><div class="al-title">MediTrack is ready</div><div class="al-sub">Your reminders are active.</div></div></div></div></div>
+      </div>
+
+      <!-- PATIENT PROFILE -->
+      <div class="page" id="page-patient-id">
+        <div class="sec-header mb-20"><div class="sec-title">Patient Profile</div><button class="btn btn-secondary btn-sm" id="edit-pt-btn">✏️ Edit Profile</button></div>
+        <div class="patient-card">
+          <div class="pt-header">
+            <div class="pt-av-lg" id="pid-av">P</div>
+            <div>
+              <div class="pt-name-big" id="pid-name">—</div>
+              <div class="pt-id-txt" id="pid-idnum">ID: —</div>
+              <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                <span class="badge b-sage">Active</span>
+                <span class="badge b-muted" id="pid-age">—</span>
+                <span id="pid-capbadge"></span>
+              </div>
+            </div>
+            <div style="text-align:right;margin-left:auto">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--txt-s);margin-bottom:5px;font-weight:600">Blood Type</div>
+              <div class="blood-badge" id="pid-blood">—</div>
+            </div>
+          </div>
+          <div class="pt-id-grid">
+            <div class="idf"><label>Date of Birth</label><div class="val" id="pid-dob">—</div></div>
+            <div class="idf"><label>Condition</label><div class="val" id="pid-cond">—</div></div>
+            <div class="idf"><label>Allergies</label><div class="val" id="pid-allerg">—</div></div>
+            <div class="idf"><label>PhilHealth / Insurance</label><div class="val" id="pid-ins">—</div></div>
+            <div class="idf"><label>Address</label><div class="val" id="pid-addr">—</div></div>
+            <div class="idf"><label>Caregiver</label><div class="val" id="pid-cg">—</div></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Emergency Contacts</div>
+            <div id="ec-list"><div class="empty" style="padding:20px 0;"><div class="ei">👤</div><p>No contacts yet.</p></div></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:12px" id="add-ec-btn">+ Add Contact</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Notes & Remarks</div>
+            <div id="notes-disp" style="font-size:14px;color:var(--txt-m);line-height:1.7;min-height:70px">No notes yet.</div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:12px" id="edit-notes-btn">✏️ Edit Notes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULER -->
+      <div class="page" id="page-scheduler">
+        <div class="sec-header mb-20"><div class="sec-title">Medication Scheduler</div><button class="btn btn-primary" id="open-add-med">➕ Add Medication</button></div>
+        <div class="tab-bar">
+          <div class="tab-item active" data-tab="tab-active">Active</div>
+          <div class="tab-item" data-tab="tab-all">All Medications</div>
+        </div>
+        <div id="tab-active"><div id="sched-active" class="med-list"><div class="empty"><div class="ei">💊</div><p>No medications yet. Click "Add Medication" to begin.</p></div></div></div>
+        <div id="tab-all" style="display:none"><div id="sched-all" class="med-list"></div></div>
+      </div>
+
+      <!-- ══ REMINDERS ════════════════════════════== -->
+      <div class="page" id="page-reminders">
+        <div class="sec-header mb-20">
+          <div class="sec-title">Reminders</div>
+          <button class="btn btn-secondary btn-sm" id="test-alarm-btn">🔔 Test Alarm</button>
+        </div>
+        <div id="reminders-list" style="background:var(--surface,#fff);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm);min-height:80px;">
+          <div class="empty"><div class="empty-icon">🔔</div><p>No reminders yet. Add medications to auto-generate reminders.</p></div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="page" id="page-history">
+        <div class="sec-header mb-20">
+          <div class="sec-title">History Log</div>
+          <div style="display:flex;gap:10px;">
+            <div class="search-wrap"><span class="si">🔍</span><input type="text" id="log-search" placeholder="Search medication…" style="width:200px"></div>
+            <button class="btn btn-ghost btn-sm" id="export-csv">📥 Export CSV</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="data-tbl">
+            <thead><tr><th>Medication</th><th>Dose</th><th>Scheduled</th><th>Taken At</th><th>Status</th><th>By</th></tr></thead>
+            <tbody id="log-tbody"><tr><td colspan="6"><div class="empty" style="padding:28px"><div class="ei">📋</div><p>No history yet.</p></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FAMILY PORTAL -->
+      <div class="page" id="page-portal">
+        <div class="sec-header mb-20"><div class="sec-title">Family Portal</div><button class="btn btn-primary btn-sm" id="add-member-btn">+ Add Member</button></div>
+        <div class="grid-2 mb-24">
+          <div class="card"><div class="card-title">Family & Caregivers</div><div id="member-list" style="display:flex;flex-direction:column;gap:12px"><div class="empty"><div class="ei">👥</div><p>No members linked yet.</p></div></div></div>
+          <div class="card">
+            <div class="card-title">Today's Summary</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+              <span style="font-size:32px">📊</span>
+              <div><div style="font-size:20px;font-weight:700;color:var(--txt-h)" id="portal-pct">—</div><div style="font-size:14px;color:var(--txt-m)">Adherence today</div></div>
+            </div>
+            <div id="portal-bars"></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">Activity Feed</div><div id="activity-feed"><div class="alert-item al-info"><div class="al-icon">ℹ️</div><div class="al-body"><div class="al-title">Portal ready</div><div class="al-sub">Activity will appear here.</div></div></div></div></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="sec-header mb-20"><div class="sec-title">Settings</div></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Notifications</div>
+            <div class="setting-row"><div><div class="setting-lbl">Browser Notifications</div><div class="setting-desc">Alert when a dose is due</div></div><button class="toggle on" data-key="notif"></button></div>
+            <div class="setting-row"><div><div class="setting-lbl">Repeat Alarm (30 min)</div><div class="setting-desc">Re-alert if dose not confirmed</div></div><button class="toggle on" data-key="repeat"></button></div>
+            <div class="setting-row"><div><div class="setting-lbl">Daily Email Summary</div><div class="setting-desc">Receive daily log via email</div></div><button class="toggle" data-key="email"></button></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Preferences</div>
+            <div class="setting-row"><div><div class="setting-lbl">Time Format</div></div><select style="width:130px" id="pref-time"><option value="12">12-hour</option><option value="24">24-hour</option></select></div>
+            <div class="setting-row"><div><div class="setting-lbl">Reminder Advance</div><div class="setting-desc">Alert X minutes before dose time</div></div><select style="width:130px" id="pref-adv"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option></select></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Account</div>
+            <div class="setting-row"><div><div class="setting-lbl">Switch Account</div><div class="setting-desc">Log out and choose another account</div></div><button class="btn btn-ghost btn-sm" id="logout-btn">🔄 Switch</button></div>
+            <div class="setting-row"><div><div class="setting-lbl">Export Backup</div><div class="setting-desc">Download full JSON backup</div></div><button class="btn btn-ghost btn-sm" id="export-all-btn">📥 Export</button></div>
+            <div class="setting-row"><div><div class="setting-lbl">Clear Today's Log</div></div><button class="btn btn-danger btn-sm" id="clear-log-btn">🗑️ Clear</button></div>
+          </div>
+          <div class="card">
+            <div class="card-title">About</div>
+            <div style="font-size:14px;color:var(--txt-m);line-height:1.9">
+              <div><strong style="color:var(--txt-h)">Version:</strong> 2.1 — Web App</div>
+              <div><strong style="color:var(--txt-h)">Storage:</strong> LocalStorage (offline-first)</div>
+              <div><strong style="color:var(--txt-h)">Purpose:</strong> Medication reminders for Filipino elderly patients and caregivers</div>
+              <div style="margin-top:12px;color:var(--sage);font-size:13px">Designed with care. 🌿</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app-shell -->
+
+<!-- ══════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════ -->
+
+<!-- Add / Edit Medication -->
+<div class="modal-overlay" id="modal-med">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="med-modal-title">Add Medication</div>
+      <div class="modal-close" onclick="closeModal('modal-med')">✕</div>
+    </div>
+    <input type="hidden" id="med-edit-id">
+    <div class="form-row">
+      <div class="form-group"><label>Medicine Name *</label><input type="text" id="med-name" placeholder="e.g. Amlodipine"></div>
+      <div class="form-group"><label>Dosage *</label><input type="text" id="med-dose" placeholder="e.g. 5mg, 1 tablet"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Form / Type</label>
+        <select id="med-type"><option>Tablet</option><option>Capsule</option><option>Liquid (mL)</option><option>Injection</option><option>Inhaler</option><option>Patch</option><option>Drops</option></select>
+      </div>
+      <div class="form-group">
+        <label>Frequency Template</label>
+        <select id="med-freq">
+          <option value="custom">Custom — I'll set exact times</option>
+          <option value="1">Once daily (preset: 8 AM)</option>
+          <option value="2">Twice daily (preset: 8 AM, 8 PM)</option>
+          <option value="3">3× daily (8 AM, 2 PM, 8 PM)</option>
+          <option value="4">4× daily (7 AM, 12 PM, 6 PM, 10 PM)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ── SPECIFIC TIME SCHEDULER ────────── -->
+    <div class="form-group">
+      <label>Scheduled Times *</label>
+      <div class="time-scheduler">
+        <!-- Quick-preset buttons -->
+        <div style="font-size:12px;color:var(--txt-s);margin-bottom:8px;font-weight:500">Quick presets:</div>
+        <div class="time-quick-btns" id="time-quick-btns">
+          <button class="tq-btn" data-time="06:00">6:00 AM</button>
+          <button class="tq-btn" data-time="07:00">7:00 AM</button>
+          <button class="tq-btn" data-time="08:00">8:00 AM</button>
+          <button class="tq-btn" data-time="09:00">9:00 AM</button>
+          <button class="tq-btn" data-time="12:00">12:00 PM</button>
+          <button class="tq-btn" data-time="13:00">1:00 PM</button>
+          <button class="tq-btn" data-time="14:00">2:00 PM</button>
+          <button class="tq-btn" data-time="18:00">6:00 PM</button>
+          <button class="tq-btn" data-time="19:00">7:00 PM</button>
+          <button class="tq-btn" data-time="20:00">8:00 PM</button>
+          <button class="tq-btn" data-time="21:00">9:00 PM</button>
+          <button class="tq-btn" data-time="22:00">10:00 PM</button>
+        </div>
+
+        <!-- Manual time entry -->
+        <div class="time-input-row">
+          <div class="form-group">
+            <label>Add a specific time</label>
+            <input type="time" id="custom-time-in">
+          </div>
+          <button class="btn btn-secondary btn-sm time-add-btn" id="add-time-btn">+ Add</button>
+        </div>
+
+        <!-- Scheduled chips display -->
+        <div style="font-size:12px;color:var(--txt-s);margin-bottom:8px;font-weight:500">Scheduled times:</div>
+        <div class="scheduled-times" id="sched-times-wrap">
+          <div class="times-empty" id="times-empty-msg">No times added yet. Use the presets or type a custom time above.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group"><label>Start Date</label><input type="date" id="med-start"></div>
+      <div class="form-group"><label>End Date (optional)</label><input type="date" id="med-end"></div>
+    </div>
+    <div class="form-group"><label>Instructions / Notes</label><textarea id="med-notes" placeholder="e.g. Take after meals, avoid grapefruit…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-med')">Cancel</button>
+      <button class="btn btn-primary" id="save-med-btn">💾 Save Medication</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Patient -->
+<div class="modal-overlay" id="modal-patient">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Edit Patient Profile</div><div class="modal-close" onclick="closeModal('modal-patient')">✕</div></div>
+    <div class="form-row">
+      <div class="form-group"><label>First Name *</label><input type="text" id="pt-fname"></div>
+      <div class="form-group"><label>Last Name *</label><input type="text" id="pt-lname"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Date of Birth</label><input type="date" id="pt-dob"></div>
+      <div class="form-group"><label>Blood Type</label><select id="pt-blood"><option value="">—</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Condition</label><input type="text" id="pt-cond"></div>
+      <div class="form-group"><label>Allergies</label><input type="text" id="pt-allerg"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>PhilHealth / Insurance</label><input type="text" id="pt-ins"></div>
+      <div class="form-group"><label>Address</label><input type="text" id="pt-addr"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Caregiver Name</label><input type="text" id="pt-cgname" placeholder="Caregiver's full name"></div>
+      <div class="form-group"><label>Caregiver Relationship</label><select id="pt-cgrel"><option value="">— Select —</option><option>Son</option><option>Daughter</option><option>Spouse</option><option>Sibling</option><option>Parent</option><option>Professional Caregiver</option><option>Other</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-patient')">Cancel</button>
+      <button class="btn btn-primary" id="save-pt-btn">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Emergency Contact -->
+<div class="modal-overlay" id="modal-ec">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Emergency Contact</div><div class="modal-close" onclick="closeModal('modal-ec')">✕</div></div>
+    <div class="form-group"><label>Full Name *</label><input type="text" id="ec-name" placeholder="Full name"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Relationship</label><select id="ec-rel"><option>Son</option><option>Daughter</option><option>Spouse</option><option>Sibling</option><option>Parent</option><option>Relative</option><option>Caregiver</option><option>Neighbor</option><option>Other</option></select></div>
+      <div class="form-group"><label>Phone *</label><input type="tel" id="ec-phone" placeholder="+63 9XX XXX XXXX"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ec')">Cancel</button>
+      <button class="btn btn-primary" id="save-ec-btn">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- Family Member -->
+<div class="modal-overlay" id="modal-member">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Family Member</div><div class="modal-close" onclick="closeModal('modal-member')">✕</div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Name *</label><input type="text" id="fm-name"></div>
+      <div class="form-group"><label>Relationship</label><select id="fm-rel"><option>Son</option><option>Daughter</option><option>Spouse</option><option>Sibling</option><option>Caregiver</option><option>Other</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Phone</label><input type="tel" id="fm-phone"></div>
+      <div class="form-group"><label>Access Level</label><select id="fm-access"><option>View Only</option><option>Can Mark Taken</option><option>Full Access</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-member')">Cancel</button>
+      <button class="btn btn-primary" id="save-member-btn">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notes -->
+<div class="modal-overlay" id="modal-notes">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Medical Notes</div><div class="modal-close" onclick="closeModal('modal-notes')">✕</div></div>
+    <div class="form-group"><label>Notes</label><textarea id="notes-input" style="min-height:140px" placeholder="Clinical notes, physician instructions, reminders…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-notes')">Cancel</button>
+      <button class="btn btn-primary" id="save-notes-btn">Save Notes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     ALARM OVERLAY
+════════════════════════════════════════════════ -->
+<div id="alarm-overlay">
+  <div class="alarm-box">
+    <span class="alarm-bell">🔔</span>
+    <div class="alarm-med" id="alarm-med-name">Medication</div>
+    <div class="alarm-dose" id="alarm-dose-text">Dosage</div>
+    <div class="alarm-note" id="alarm-note-text">Take as prescribed.</div>
+    <div class="alarm-btns">
+      <button class="btn btn-ghost" id="alarm-snooze-btn">⏰ Snooze 30 min</button>
+      <button class="btn btn-primary" id="alarm-taken-btn">✅ Mark as Taken</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-wrap"></div>
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════
+   STORAGE  — namespaced, per-user
+══════════════════════════════════════════════ */
+let CUR = null; // current account id
+
+const gStore = {
+  get: k      => { try { return JSON.parse(localStorage.getItem('mt_g_' + k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem('mt_g_' + k, JSON.stringify(v)),
+  del: k      => localStorage.removeItem('mt_g_' + k)
+};
+
+const uStore = {
+  get: k      => { try { return JSON.parse(localStorage.getItem(`mt_u${CUR}_` + k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem(`mt_u${CUR}_` + k, JSON.stringify(v)),
+  del: k      => localStorage.removeItem(`mt_u${CUR}_` + k)
+};
+
+// ── DATE / TIME UTILS (must be first — used everywhere) ──
+function pad(n) { return String(n).padStart(2, '0'); }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function nowTime() { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+// ── DATA ACCESSORS (must be before any render calls) ──
+function getMeds()     { return uStore.get('meds')     || []; }
+function saveMeds(arr)  { uStore.set('meds', arr); }
+function getLogs()     { return uStore.get('logs')     || []; }
+function saveLogs(arr)  { uStore.set('logs', arr); }
+function getContacts()  { return uStore.get('contacts') || []; }
+function saveContacts(arr){ uStore.set('contacts', arr); }
+function getMembers()   { return uStore.get('members')  || []; }
+function saveMembers(arr) { uStore.set('members', arr); }
+function getActivity()  { return uStore.get('activity') || []; }
+function saveActivity(arr){ uStore.set('activity', arr); }
+
+/* ══════════════════════════════════════════════
+   ACCOUNTS  (global store)
+══════════════════════════════════════════════ */
+function getAccounts()     { return gStore.get('accounts') || []; }
+function saveAccounts(arr) { gStore.set('accounts', arr); }
+
+function findAccount(username) {
+  return getAccounts().find(a => a.username.toLowerCase() === username.toLowerCase().trim());
+}
+
+/* ══════════════════════════════════════════════
+   AUTH STATE
+══════════════════════════════════════════════ */
+let suMode = null;   // 'patient'|'caregiver'
+let suCap  = null;   // 'capable'|'incapable'
+
+/* ── Tab switch ── */
+function switchAuthTab(tab) {
+  document.getElementById('panel-login').classList.toggle('active', tab === 'login');
+  document.getElementById('panel-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  if (tab === 'login') renderSavedAccounts();
+}
+
+/* ── Saved accounts on login panel ── */
+function renderSavedAccounts() {
+  const accs = getAccounts();
+  const el   = document.getElementById('saved-accounts');
+  const divider = document.getElementById('login-divider');
+  if (!accs.length) { el.innerHTML = ''; divider.style.display = 'none'; return; }
+  divider.style.display = 'block';
+  const colors = ['var(--sage)', 'var(--sky)', 'var(--amber)', 'var(--rose)'];
+  el.innerHTML = accs.map((a, i) => `
+    <div class="account-item" onclick="quickLogin(${a.id})">
+      <div class="acc-av" style="background:${colors[i%4]}">${(a.patient.firstName||'P')[0].toUpperCase()}</div>
+      <div class="acc-info">
+        <div class="acc-name">${a.patient.firstName} ${a.patient.lastName||''}</div>
+        <div class="acc-meta">${a.patient.setupMode === 'caregiver' ? '🧑‍⚕️ Caregiver account' : '🧓 Patient account'} · @${a.username}</div>
+      </div>
+      <div class="acc-arrow">→</div>
+    </div>`).join('');
+}
+
+/* Quick-login by clicking saved account tile (still asks PIN) */
+function quickLogin(id) {
+  const acc = getAccounts().find(a => a.id === id);
+  if (!acc) return;
+  document.getElementById('login-username').value = acc.username;
+  document.getElementById('login-pin').focus();
+  toast(`Hello, ${acc.patient.firstName}! Enter your PIN to continue.`, 'info');
+}
+
+/* ── Full login ── */
+function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const pin      = document.getElementById('login-pin').value;
+  hideErr(['login-err', 'pin-err']);
+
+  if (!username) { showErr('login-err'); return; }
+  const acc = findAccount(username);
+  if (!acc) { showErr('login-err'); return; }
+  if (acc.pin !== pin) { showErr('pin-err'); return; }
+
+  CUR = acc.id;
+  gStore.set('session', CUR);
+  launchApp();
+}
+
+/* ── Sign-up step navigation ── */
+function suGoStep(n) {
+  // validate before moving forward
+  if (n === 2 && !suMode) { toast('Please select who is setting up.', 'warning'); return; }
+  if (n === 2 && suCap === null) { toast('Please select patient capability.', 'warning'); return; }
+  if (n === 3) {
+    const fn = document.getElementById('su-fname').value.trim();
+    const ln = document.getElementById('su-lname').value.trim();
+    if (!fn || !ln) { toast('Please enter first and last name.', 'warning'); return; }
+    if (suMode === 'caregiver' && !document.getElementById('su-cg-name').value.trim()) {
+      toast('Please enter the caregiver name.', 'warning'); return;
+    }
+  }
+
+  document.querySelectorAll('.signup-step').forEach((s, i) => s.classList.toggle('active', i === n));
+  document.querySelectorAll('.s-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === n);
+    d.classList.toggle('done', i < n);
+  });
+
+  if (n === 1) {
+    document.getElementById('cap-title').textContent =
+      suMode === 'patient' ? 'Can you use this app independently?' : 'Can the patient use this app independently?';
+  }
+  if (n === 2) {
+    document.getElementById('caregiver-fields').style.display = (suMode === 'caregiver' || suCap === 'incapable') ? 'block' : 'none';
+    document.getElementById('step2-desc').textContent =
+      suMode === 'caregiver' ? 'Enter the patient\'s details and your own information as caregiver.' : 'Enter your basic details as the patient.';
+  }
+}
+
+function selectMode(m) {
+  suMode = m;
+  document.getElementById('mc-patient').classList.toggle('sel', m === 'patient');
+  document.getElementById('mc-caregiver').classList.toggle('sel', m === 'caregiver');
+  document.getElementById('su-0-next').disabled = false;
+}
+
+function selectCap(c) {
+  suCap = c;
+  document.getElementById('cc-capable').classList.toggle('sel', c === 'capable');
+  document.getElementById('cc-incapable').classList.toggle('sel', c === 'incapable');
+  document.getElementById('su-1-next').disabled = false;
+}
+
+function finishSignup() {
+  const username = document.getElementById('su-username').value.trim();
+  const pin      = document.getElementById('su-pin').value;
+  const pin2     = document.getElementById('su-pin2').value;
+  hideErr(['uname-err', 'pin2-err']);
+
+  if (!username) { toast('Please enter a username.', 'warning'); return; }
+  if (findAccount(username)) { showErr('uname-err'); return; }
+  if (!pin) { toast('Please enter a PIN or password.', 'warning'); return; }
+  if (pin !== pin2) { showErr('pin2-err'); return; }
+
+  const newAcc = {
+    id:       Date.now(),
+    username,
+    pin,
+    patient: {
+      firstName:    document.getElementById('su-fname').value.trim(),
+      lastName:     document.getElementById('su-lname').value.trim(),
+      dob:          document.getElementById('su-dob').value,
+      blood:        document.getElementById('su-blood').value,
+      condition:    document.getElementById('su-condition').value,
+      allergies:    document.getElementById('su-allergies').value,
+      setupMode:    suMode,
+      capMode:      suCap,
+      caregiverName:document.getElementById('su-cg-name')?.value || '',
+      caregiverRel: document.getElementById('su-cg-rel')?.value  || '',
+      caregiverPhone:document.getElementById('su-cg-phone')?.value || '',
+      insurance:    document.getElementById('su-insurance')?.value || '',
+      address:      document.getElementById('su-address')?.value  || '',
+      idNumber:     'MT-' + Math.floor(100000 + Math.random() * 900000),
+      notes:        '',
+      insurance:    '',
+      address:      '',
+      createdAt:    new Date().toISOString()
+    }
+  };
+
+  const accounts = getAccounts();
+  accounts.push(newAcc);
+  saveAccounts(accounts);
+
+  CUR = newAcc.id;
+  gStore.set('session', CUR);
+  toast(`Welcome, ${newAcc.patient.firstName}! Your account has been created.`, 'success');
+  launchApp();
+}
+
+/* ── Password visibility ── */
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁️' : '🙈';
+}
+
+function showErr(id) { const e = document.getElementById(id); if (e) { e.classList.add('show'); } }
+function hideErr(ids) { ids.forEach(id => { const e = document.getElementById(id); if (e) e.classList.remove('show'); }); }
+
+/* ══════════════════════════════════════════════
+   LAUNCH APP
+══════════════════════════════════════════════ */
+function launchApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-shell').classList.add('visible');
+  updateSidebar();
+  refreshDashboard();
+  scheduleAlarms();
+  updateBadge();
+  initToggles();
+  renderPatientID();
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+}
+
+function getPatient() { return uStore.get('patient') || accPatient(); }
+function accPatient() { const a = getAccounts().find(x => x.id === CUR); return a ? a.patient : {}; }
+
+function savePatientLocal(data) {
+  uStore.set('patient', data);
+  // also update accounts store
+  const accs = getAccounts();
+  const idx  = accs.findIndex(a => a.id === CUR);
+  if (idx >= 0) { accs[idx].patient = { ...accs[idx].patient, ...data }; saveAccounts(accs); }
+}
+
+function updateSidebar() {
+  const pt = getPatient();
+  const full = `${pt.firstName || 'Patient'} ${pt.lastName || ''}`.trim();
+  const init = ((pt.firstName||'P')[0] + (pt.lastName||'X')[0]).toUpperCase();
+  const role = pt.setupMode === 'caregiver' ? `Managed by ${pt.caregiverName || 'Caregiver'}` : 'Patient';
+  const _sb = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  _sb('sb-av',   init);
+  _sb('sb-name', full);
+  _sb('sb-role', role);
+}
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+const TITLES = { dashboard:'Dashboard','patient-id':'Patient Profile',scheduler:'Med Scheduler',reminders:'Reminders',history:'History Log',portal:'Family Portal',settings:'Settings' };
+
+document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', () => navigate(item.dataset.page)));
+document.getElementById('notif-btn').addEventListener('click', () => navigate('reminders'));
+document.getElementById('quick-add-btn').addEventListener('click', () => openMedModal());
+
+function navigate(pg) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === pg));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + pg));
+  const pt2 = document.getElementById('page-title'); if (pt2) pt2.textContent = TITLES[pg] || 'MediTrack';
+  if (pg === 'dashboard')   refreshDashboard();
+  if (pg === 'scheduler')   renderScheduler();
+  if (pg === 'reminders')   renderReminders();
+  if (pg === 'history')     renderLog();
+  if (pg === 'portal')      renderPortal();
+  if (pg === 'patient-id')  renderPatientID();
+}
+
+/* Topbar real-time clock */
+function tickClock() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  const timeStr = `${pad(h12)}:${pad(m)}:${pad(s)} ${ap}`;
+  const el = document.getElementById('tb-clock');
+  if (el) el.textContent = timeStr;
+}
+tickClock(); setInterval(tickClock, 1000);
+
+/* Offline detect */
+function checkOnline() { document.getElementById('offline-bar').classList.toggle('show', !navigator.onLine); }
+window.addEventListener('online', checkOnline); window.addEventListener('offline', checkOnline); checkOnline();
+
+/* Modals */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+/* Toast */
+function toast(msg, type = 'info') {
+  const icons = {success:'✅',info:'ℹ️',warning:'⚠️',error:'❌'};
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3200);
+}
+
+// ══════════════════════════════════════════════════════
+//  DATE / TIME UTILS  (declared at top of script)
+// ══════════════════════════════════════════════════════
+
+function fmtTime(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${pad(m)} ${ap}`;
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+function calcAge(dob) {
+  if (!dob) return '—';
+  const b = new Date(dob), t = new Date();
+  let a = t.getFullYear() - b.getFullYear();
+  if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--;
+  return a + ' yrs old';
+}
+function genId() { return 'MT-' + Math.floor(100000 + Math.random() * 900000); }
+
+function defaultTimes(freq) {
+  return { 1: ['08:00'], 2: ['08:00','20:00'], 3: ['08:00','14:00','20:00'], 4: ['07:00','12:00','18:00','22:00'] }[freq] || ['08:00'];
+}
+
+/* ══════════════════════════════════════════════
+   DATA ACCESSORS  (declared at top of script)
+══════════════════════════════════════════════ */
+
+function addActivity(msg) {
+  const log = getActivity();
+  log.unshift({msg, ts: new Date().toISOString()});
+  saveActivity(log.slice(0,40));
+}
+
+/* ══════════════════════════════════════════════
+   TIME SCHEDULER UI
+══════════════════════════════════════════════ */
+let schedTimes = []; // working array while modal is open
+
+function initTimeScheduler() {
+  renderSchedChips();
+  // Quick-preset button listeners
+  document.querySelectorAll('.tq-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.time;
+      if (schedTimes.includes(t)) {
+        schedTimes = schedTimes.filter(x => x !== t);
+        btn.classList.remove('applied');
+      } else {
+        schedTimes.push(t);
+        schedTimes.sort();
+        btn.classList.add('applied');
+      }
+      renderSchedChips();
+    });
+  });
+}
+
+function renderSchedChips() {
+  const wrap  = document.getElementById('sched-times-wrap');
+  const empty = document.getElementById('times-empty-msg');
+  // reset quick-btn states
+  document.querySelectorAll('.tq-btn').forEach(b => b.classList.toggle('applied', schedTimes.includes(b.dataset.time)));
+
+  if (!schedTimes.length) {
+    wrap.innerHTML = '';
+    wrap.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.innerHTML = schedTimes.map((t, i) => {
+    const [h, m] = t.split(':').map(Number);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h%12||12;
+    const labels = ['Morning','Mid-Morning','Noon','Afternoon','Evening','Night','Bedtime'];
+    const label = h < 10 ? 'Morning' : h < 12 ? 'Mid-Morning' : h === 12 ? 'Noon' : h < 17 ? 'Afternoon' : h < 20 ? 'Evening' : h < 22 ? 'Night' : 'Bedtime';
+    return `<div class="sched-time-chip">
+      <span class="stc-time">${h12}:${pad(m)}</span><span class="stc-ampm"> ${ap}</span>
+      <span class="stc-label">${label}</span>
+      <button class="stc-del" onclick="removeSchedTime('${t}')" title="Remove">×</button>
+    </div>`;
+  }).join('');
+}
+
+function removeSchedTime(t) {
+  schedTimes = schedTimes.filter(x => x !== t);
+  renderSchedChips();
+}
+window.removeSchedTime = removeSchedTime;
+
+document.getElementById('add-time-btn').addEventListener('click', () => {
+  const t = document.getElementById('custom-time-in').value;
+  if (!t) { toast('Please select a time first.', 'warning'); return; }
+  if (schedTimes.includes(t)) { toast('This time is already added.', 'info'); return; }
+  schedTimes.push(t);
+  schedTimes.sort();
+  document.getElementById('custom-time-in').value = '';
+  renderSchedChips();
+  toast(`${fmtTime(t)} added!`, 'success');
+});
+
+// When frequency template changes, auto-fill times
+document.getElementById('med-freq').addEventListener('change', function() {
+  const v = this.value;
+  if (v !== 'custom') {
+    schedTimes = [...defaultTimes(parseInt(v))];
+    renderSchedChips();
+    toast(`Preset times applied! You can still add or remove times.`, 'info');
+  }
+});
+
+/* ══════════════════════════════════════════════
+   MEDICATION CRUD
+══════════════════════════════════════════════ */
+function openMedModal(med = null) {
+  schedTimes = med ? [...(med.times || [])] : [];
+  document.getElementById('med-edit-id').value         = med?.id || '';
+  document.getElementById('med-modal-title').textContent = med ? 'Edit Medication' : 'Add Medication';
+  document.getElementById('med-name').value             = med?.name      || '';
+  document.getElementById('med-dose').value             = med?.dose      || '';
+  document.getElementById('med-type').value             = med?.type      || 'Tablet';
+  document.getElementById('med-freq').value             = med?.freqLabel || 'custom';
+  document.getElementById('med-start').value            = med?.startDate || todayStr();
+  document.getElementById('med-end').value              = med?.endDate   || '';
+  document.getElementById('med-notes').value            = med?.notes     || '';
+  initTimeScheduler();
+  openModal('modal-med');
+}
+
+document.getElementById('open-add-med').addEventListener('click', () => openMedModal());
+
+document.getElementById('save-med-btn').addEventListener('click', () => {
+  const name = document.getElementById('med-name').value.trim();
+  const dose = document.getElementById('med-dose').value.trim();
+  if (!name || !dose) { toast('Medicine name and dosage are required.', 'warning'); return; }
+  if (!schedTimes.length) { toast('Please add at least one scheduled time.', 'warning'); return; }
+
+  const med = {
+    name, dose,
+    type:       document.getElementById('med-type').value,
+    freqLabel:  document.getElementById('med-freq').value,
+    times:      [...schedTimes],
+    startDate:  document.getElementById('med-start').value || todayStr(),
+    endDate:    document.getElementById('med-end').value   || null,
+    notes:      document.getElementById('med-notes').value,
+    active:     true,
+    createdAt:  new Date().toISOString()
+  };
+
+  const editId = document.getElementById('med-edit-id').value;
+  const meds   = getMeds();
+
+  if (editId) {
+    const idx = meds.findIndex(m => m.id == editId);
+    if (idx >= 0) { med.id = parseInt(editId); meds[idx] = med; }
+    toast(`${name} updated!`, 'success');
+  } else {
+    med.id = Date.now();
+    meds.push(med);
+    toast(`${name} added!`, 'success');
+    addActivity(`Medication added: ${name} ${dose}`);
+  }
+  saveMeds(meds);
+  closeModal('modal-med');
+  refreshDashboard();
+  renderScheduler();
+  scheduleAlarms();
+  updateBadge();
+});
+
+function deleteMed(id, triggerBtn) {
+  const meds = getMeds();
+  const med  = meds.find(m => m.id == id);
+  if (!med) return;
+
+  // Walk up from the clicked button to find the .med-item row
+  const row = triggerBtn ? triggerBtn.closest('.med-item') : null;
+
+  // If a confirm strip is already open in this row, ignore repeat clicks
+  if (row && row.querySelector('.del-confirm-row')) return;
+
+  if (row) {
+    const strip = document.createElement('div');
+    strip.className = 'del-confirm-row';
+    strip.style.cssText = [
+      'display:flex;align-items:center;gap:10px;margin-top:10px',
+      'padding:8px 12px;background:rgba(176,48,48,0.08)',
+      'border-radius:8px;border:1.5px solid rgba(176,48,48,0.22)',
+      'animation:alertSlide .2s ease;flex-wrap:wrap'
+    ].join(';');
+    strip.innerHTML =
+      '<span style="font-size:13px;color:#B03030;font-weight:600;flex:1">Remove <strong>'
+      + med.name + '</strong>?</span>'
+      + '<button style="padding:5px 16px;background:#B03030;color:#fff;border:none;'
+      + 'border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px"'
+      + ' onclick="confirmDeleteMed(' + id + ')">Yes, Remove</button>'
+      + '<button style="padding:5px 12px;background:transparent;color:var(--txt-m,#5C6E82);'
+      + 'border:1.5px solid var(--bdr,rgba(60,80,110,0.2));border-radius:6px;font-size:13px;cursor:pointer"'
+      + ' onclick="this.closest(\'.del-confirm-row\').remove()">Cancel</button>';
+    row.appendChild(strip);
+  } else {
+    // Fallback if row not found — delete directly
+    confirmDeleteMed(id);
+  }
+}
+window.deleteMed = deleteMed;
+
+function confirmDeleteMed(id) {
+  const meds = getMeds();
+  const med  = meds.find(m => m.id == id);
+  saveMeds(meds.map(m => m.id == id ? {...m, active: false} : m));
+  if (med) addActivity('Medication removed: ' + med.name);
+  toast('Medication removed.', 'info');
+  refreshDashboard();
+  renderScheduler();
+  scheduleAlarms();
+  updateBadge();
+}
+window.confirmDeleteMed = confirmDeleteMed;
+
+function openEditMed(id) { const med = getMeds().find(m => m.id == id); if (med) openMedModal(med); }
+window.openEditMed = openEditMed;
+
+/* ══════════════════════════════════════════════
+   MARK TAKEN
+══════════════════════════════════════════════ */
+function markTaken(medId, time, date_, by = 'Self') {
+  const logs = getLogs();
+  const ex   = logs.find(l => l.medId == medId && l.date === date_ && l.scheduledTime === time);
+  if (ex) { ex.status = 'taken'; ex.takenAt = new Date().toISOString(); ex.loggedBy = by; }
+  else logs.push({id:Date.now(), medId, date:date_, scheduledTime:time, status:'taken', takenAt:new Date().toISOString(), loggedBy:by});
+  saveLogs(logs);
+  const med = getMeds().find(m => m.id == medId);
+  if (med) { toast(`✅ ${med.name} marked as taken!`, 'success'); addActivity(`${med.name} (${fmtTime(time)}) marked as taken.`); }
+  if (currentAlarm?.medId == medId && currentAlarm?.time === time) dismissAlarm();
+
+  // Animate the reminder item out smoothly, then refresh
+  const reminderItems = document.querySelectorAll('#reminders-list .alert-item');
+  let found = false;
+  reminderItems.forEach(el => {
+    const btn = el.querySelector(`button[onclick*="markTaken(${medId},'${time}'"]`);
+    if (btn) {
+      found = true;
+      el.style.transition = 'opacity 0.3s ease, transform 0.3s ease, max-height 0.35s ease, margin 0.35s ease, padding 0.35s ease';
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(30px)';
+      el.style.maxHeight = el.offsetHeight + 'px';
+      setTimeout(() => {
+        el.style.maxHeight = '0';
+        el.style.marginBottom = '0';
+        el.style.padding = '0';
+      }, 280);
+    }
+  });
+
+  const delay = found ? 380 : 0;
+  setTimeout(() => {
+    refreshDashboard(); renderReminders(); updateBadge();
+  }, delay);
+}
+window.markTaken = markTaken;
+
+/* ══════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════ */
+
+function refreshDashboard() {
+  const today = todayStr();
+  const meds  = getMeds().filter(m => m.active);
+  const logs  = getLogs().filter(l => l.date === today);
+
+  let taken = 0, total = 0;
+  meds.forEach(m => {
+    total += m.times.length;
+    m.times.forEach(t => { if (logs.find(l => l.medId == m.id && l.scheduledTime === t && l.status === 'taken')) taken++; });
+  });
+  const missed = getLogs().filter(l => l.status === 'missed').length;
+
+  const _st = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  _st('st-total',   meds.length);
+  _st('st-taken',   taken);
+  _st('st-pending', Math.max(0, total - taken));
+  _st('st-missed',  missed);
+
+  renderTodayList(meds, logs, today);
+  buildDashboardCalendar(meds);
+  updateBadge();
+}
+
+function getMedClass(type) {
+  if (!type) return 'mt-other';
+  const t = type.toLowerCase();
+  if (t.includes('tablet'))  return 'mt-tablet';
+  if (t.includes('capsule')) return 'mt-capsule';
+  if (t.includes('liquid') || t.includes('ml')) return 'mt-liquid';
+  return 'mt-other';
+}
+function getMedIcon(type) {
+  if (!type) return '💊';
+  const t = type.toLowerCase();
+  if (t.includes('tablet'))  return '💊';
+  if (t.includes('capsule')) return '💉';
+  if (t.includes('liquid') || t.includes('ml')) return '🧪';
+  if (t.includes('inhaler')) return '💨';
+  if (t.includes('injection')) return '💉';
+  if (t.includes('patch'))   return '🩹';
+  if (t.includes('drop'))    return '💧';
+  return '💊';
+}
+
+function renderTodayList(meds, logs, today) {
+  const el = document.getElementById('today-list');
+  if (!meds.length) { el.innerHTML = '<div class="empty"><div class="ei">💊</div><p>No medications yet.</p></div>'; return; }
+  let items = [];
+  meds.forEach(med => med.times.forEach(t => {
+    const log   = logs.find(l => l.medId == med.id && l.scheduledTime === t);
+    items.push({med, t, taken: log?.status === 'taken', past: t < nowTime()});
+  }));
+  items.sort((a,b) => a.t.localeCompare(b.t));
+  el.innerHTML = items.slice(0,8).map(({med, t, taken, past}) => {
+    const sCls = taken ? 's-taken' : past ? 's-missed' : 's-upcoming';
+    const badge = taken ? '<span class="badge b-sage">✓ Taken</span>' : past ? '<span class="badge b-rose">Overdue</span>' : `<span class="badge b-amber">${fmtTime(t)}</span>`;
+    return `<div class="med-item ${sCls}">
+      <div class="med-icon ${getMedClass(med.type)}">${getMedIcon(med.type)}</div>
+      <div class="med-det"><div class="med-name">${med.name}</div><div class="med-meta">${med.dose} · ${med.type}</div></div>
+      ${badge}
+      ${!taken ? `<button class="check-btn" onclick="markTaken(${med.id},'${t}','${today}')" title="Mark taken">✓</button>` : '<div class="check-btn done">✓</div>'}
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD CALENDAR
+══════════════════════════════════════════════ */
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function buildDashboardCalendar(meds) {
+  renderCalendar(meds, calYear, calMonth);
+  document.getElementById('cal-prev').onclick = () => {
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar(getMeds().filter(m => m.active), calYear, calMonth);
+  };
+  document.getElementById('cal-next').onclick = () => {
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar(getMeds().filter(m => m.active), calYear, calMonth);
+  };
+}
+
+function renderCalendar(meds, year, month) {
+  const today = new Date();
+  const todayIso = todayStr();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${monthNames[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  const logs = getLogs();
+
+  const grid = document.getElementById('cal-grid');
+  let html = '';
+
+  // Previous month trailing days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month">${prevMonthDays - i}</div>`;
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${pad(month + 1)}-${pad(d)}`;
+    const isToday = ds === todayIso;
+    const dayLogs = logs.filter(l => l.date === ds);
+    let cls = '';
+    let hasMeds = false;
+
+    if (meds.length > 0) {
+      let tot = 0, tak = 0;
+      meds.forEach(med => {
+        tot += med.times.length;
+        tak += dayLogs.filter(l => l.medId == med.id && l.status === 'taken').length;
+      });
+      if (tot > 0) {
+        hasMeds = true;
+        const pct = tak / tot;
+        if (pct >= 1) cls = 'all-taken';
+        else if (pct > 0) cls = 'partial';
+        else if (ds < todayIso) cls = 'has-missed';
+        else cls = 'has-meds';
+      }
+    }
+
+    html += `<div class="cal-day ${isToday ? 'today' : ''} ${cls}">${d}</div>`;
+  }
+
+  // Next month leading days
+  const totalCells = firstDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    html += `<div class="cal-day other-month">${i}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════
+   SCHEDULER
+══════════════════════════════════════════════ */
+function renderScheduler() {
+  renderMedList(getMeds().filter(m => m.active), 'sched-active');
+  renderMedList(getMeds(), 'sched-all');
+}
+
+function renderMedList(meds, elId) {
+  const el   = document.getElementById(elId);
+  const today = todayStr();
+  const logs  = getLogs().filter(l => l.date === today);
+  if (!meds.length) { el.innerHTML = '<div class="empty"><div class="ei">💊</div><p>No medications here.</p></div>'; return; }
+  el.innerHTML = meds.map(med => {
+    const chips = med.times.map(t => {
+      const log   = logs.find(l => l.medId == med.id && l.scheduledTime === t);
+      const taken = log?.status === 'taken';
+      const now   = nowTime();
+      const cls   = taken ? 'taken' : t >= now ? 'upcoming' : 'overdue';
+      return '<div class="tch ' + cls + '">' + (taken?'✓':'⏰') + ' ' + fmtTime(t) + '</div>';
+    }).join('');
+    const inact = !med.active ? '<span class="badge b-muted">Archived</span>' : '';
+    const delBtn = med.active ? '<button class="btn btn-danger btn-sm btn-icon" onclick="deleteMed(' + med.id + ',this)" title="Remove">🗑️</button>' : '';
+    return '<div class="med-item ' + (med.active?'s-active':'') + '">'
+      + '<div class="med-icon ' + getMedClass(med.type) + '">' + getMedIcon(med.type) + '</div>'
+      + '<div class="med-det">'
+      + '<div class="med-name">' + med.name + ' <span style="font-weight:400;color:var(--txt-s);font-size:13px">' + med.dose + '</span> ' + inact + '</div>'
+      + '<div class="med-meta">' + med.type + ' · ' + (med.notes ? med.notes.slice(0,50)+'…' : 'No special instructions') + '</div>'
+      + '<div class="med-times">' + chips + '</div>'
+      + '</div>'
+      + '<div class="med-acts">'
+      + '<button class="btn btn-ghost btn-sm btn-icon" onclick="openEditMed(' + med.id + ')" title="Edit">✏️</button>'
+      + delBtn
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// Tabs
+document.querySelectorAll('.tab-item').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tbar = tab.closest('.tab-bar');
+    tbar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    // Try class-based first, fall back to direct ID lookup for scheduler tabs
+    const byClass = document.querySelectorAll('.tab-content');
+    if (byClass.length > 0) {
+      byClass.forEach(c => c.style.display = c.id === id ? 'block' : 'none');
+    } else {
+      // Scheduler tabs: tab-active and tab-all
+      ['tab-active', 'tab-all'].forEach(tid => {
+        const el = document.getElementById(tid);
+        if (el) el.style.display = tid === id ? 'block' : 'none';
+      });
+    }
+  });
+});
+
+// ══════════════════════════════════════════════════════
+//  REMINDERS
+// ══════════════════════════════════════════════════════
+function renderReminders() {
+  const el    = document.getElementById('reminders-list');
+  const meds  = getMeds().filter(m => m.active);
+  const today = todayStr();
+  const logs  = getLogs().filter(l => l.date === today);
+  const now   = nowTime();
+
+  if (!meds.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🔔</div><p>Add medications to see reminders here.</p></div>'; return; }
+
+  let items = [];
+  meds.forEach(med => {
+    med.times.forEach(t => {
+      const log   = logs.find(l => l.medId == med.id && l.scheduledTime === t);
+      const taken = log?.status === 'taken';
+      // Only show items that are NOT yet taken
+      if (!taken) {
+        items.push({ med, t, taken, past: t < now });
+      }
+    });
+  });
+  items.sort((a, b) => a.t.localeCompare(b.t));
+
+  if (!items.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">✅</div><p>All medications taken for now! Great job.</p></div>';
+    return;
+  }
+
+  el.innerHTML = items.map(({ med, t, past }) => {
+    const cls  = past ? 'al-warn' : 'al-info';
+    const icon = past ? '⚠️' : '⏰';
+    const lbl  = past ? 'Overdue' : 'Upcoming';
+    return `
+    <div class="alert-item ${cls}">
+      <div class="al-icon">${icon}</div>
+      <div class="al-body">
+        <div class="al-title">${med.name} — ${med.dose}</div>
+        <div class="al-sub">${med.type} · ${lbl}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <div class="al-time">${fmtTime(t)}</div>
+        <button class="btn btn-primary btn-sm" onclick="markTaken(${med.id},'${t}','${today}')">✓ Taken</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateBadge() {
+  const now   = nowTime();
+  const today = todayStr();
+  const logs  = getLogs().filter(l => l.date === today);
+  let pending = 0;
+  getMeds().filter(m => m.active).forEach(med => {
+    med.times.forEach(t => {
+      if (t <= now) {
+        const log = logs.find(l => l.medId == med.id && l.scheduledTime === t);
+        if (!log || log.status !== 'taken') pending++;
+      }
+    });
+  });
+  const badge = document.getElementById('nav-badge');
+  const pip   = document.getElementById('notif-pip');
+  if (badge) { badge.textContent = pending; badge.classList.toggle('show', pending > 0); }
+  if (pip)   { pip.textContent   = pending; pip.classList.toggle('show', pending > 0); }
+}
+
+//=======================================================
+  //ALARM
+  //=======================================================
+
+function scheduleAlarms() {
+  Object.values(alarmTimers).forEach(clearTimeout);
+  alarmTimers = {};
+  const meds = getMeds().filter(m => m.active);
+  meds.forEach(med => med.times.forEach(t => scheduleOne(med, t)));
+}
+
+function scheduleOne(med, t) {
+  const now    = new Date();
+  const target = new Date();
+  const [h, m] = t.split(':').map(Number);
+  target.setHours(h, m, 0, 0);
+  let diff = target - now;
+  if (diff < 0) diff += 86400000;
+  const key = `${med.id}_${t}`;
+  alarmTimers[key] = setTimeout(async () => {
+    const log = getLogs().find(l => l.medId == med.id && l.date === todayStr() && l.scheduledTime === t);
+    if (!log) ringAlarm(med, t);
+  }, diff);
+}
+
+/* ══════════════════════════════════════════════
+   ALARM SOUND (Web Audio API — no external file needed)
+══════════════════════════════════════════════ */
+let alarmAudioCtx = null;
+let alarmNodes = [];
+
+function startAlarmSound() {
+  try {
+    alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function beepCycle() {
+      if (!alarmAudioCtx) return;
+      const freqs = [880, 1100, 880, 1100];
+      let delay = 0;
+      freqs.forEach(freq => {
+        const osc = alarmAudioCtx.createOscillator();
+        const gain = alarmAudioCtx.createGain();
+        osc.connect(gain); gain.connect(alarmAudioCtx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        const t = alarmAudioCtx.currentTime + delay;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.35, t + 0.02);
+        gain.gain.setValueAtTime(0.35, t + 0.18);
+        gain.gain.linearRampToValueAtTime(0, t + 0.22);
+        osc.start(t); osc.stop(t + 0.25);
+        alarmNodes.push(osc);
+        delay += 0.28;
+      });
+      // Repeat every 2 seconds
+      alarmSoundTimer = setTimeout(beepCycle, 2000);
+    }
+    beepCycle();
+  } catch(e) { console.warn('Audio context error:', e); }
+}
+
+function stopAlarmSound() {
+  clearTimeout(alarmSoundTimer);
+  if (alarmAudioCtx) {
+    try { alarmAudioCtx.close(); } catch(e) {}
+    alarmAudioCtx = null;
+  }
+  alarmNodes = [];
+}
+
+let alarmSoundTimer = null;
+let currentAlarm = null;
+let alarmTimers = {};
+
+function ringAlarm(med, t) {
+  currentAlarm = { medId: med.id, time: t };
+  document.getElementById('alarm-med-name').textContent = med.name;
+  document.getElementById('alarm-dose-text').textContent = med.dose + ' — ' + fmtTime(t);
+  document.getElementById('alarm-note-text').textContent = med.notes || 'Take as prescribed.';
+  document.getElementById('alarm-overlay').classList.add('ringing');
+
+  startAlarmSound();
+
+  if (Notification.permission === 'granted') {
+    new Notification('💊 MediTrack Reminder', { body: `Time to take ${med.name} — ${med.dose}` });
+  }
+}
+
+function dismissAlarm() {
+  document.getElementById('alarm-overlay').classList.remove('ringing');
+  stopAlarmSound();
+  currentAlarm = null;
+}
+
+document.getElementById('alarm-taken-btn').addEventListener('click', () => {
+  if (!currentAlarm) return;
+  markTaken(currentAlarm.medId, currentAlarm.time, todayStr());
+  dismissAlarm();
+});
+
+document.getElementById('alarm-snooze-btn').addEventListener('click', () => {
+  if (!currentAlarm) { dismissAlarm(); return; }
+  const saved = { ...currentAlarm };
+  dismissAlarm();
+  toast('Snoozed for 30 minutes.', 'warning');
+  setTimeout(() => {
+    const med = getMeds().find(m => m.id == saved.medId);
+    if (med) ringAlarm(med, saved.time);
+  }, 30 * 60 * 1000);
+});
+
+document.getElementById('test-alarm-btn').addEventListener('click', () => {
+  const meds = getMeds().filter(m => m.active);
+  if (!meds.length) { toast('Add a medication first to test the alarm.', 'warning'); return; }
+  ringAlarm(meds[0], meds[0].times[0]);
+});
+
+// Periodic check (every minute)
+setInterval(() => {
+  const now   = nowTime();
+  const today = todayStr();
+  getMeds().filter(m => m.active).forEach(med => {
+    med.times.forEach(t => {
+      if (t <= now) {
+        const log = getLogs().find(l => l.medId == med.id && l.date === today && l.scheduledTime === t);
+        if (!log || log.status !== 'taken') {
+          const [h, m2] = t.split(':').map(Number);
+          const tDate = new Date(); tDate.setHours(h, m2, 0, 0);
+          
+          const diffMinutes = Math.floor((new Date() - tDate) / 60000);
+          
+          if (diffMinutes >= 0 && diffMinutes % 30 === 0 && !document.getElementById('alarm-overlay').classList.contains('ringing')) {
+            ringAlarm(med, t);
+          }
+        }
+      }
+    });
+  });
+  updateBadge();
+}, 60000);
+
+/* ══════════════════════════════════════════════
+   HISTORY
+══════════════════════════════════════════════ */
+function renderLog(filter = '') {
+  const logs = getLogs()
+    .filter(l => !filter || getMeds().find(m => m.id == l.medId && m.name.toLowerCase().includes(filter.toLowerCase())))
+    .sort((a,b) => (b.date+b.scheduledTime).localeCompare(a.date+a.scheduledTime))
+    .slice(0, 300);
+  const tbody = document.getElementById('log-tbody');
+  if (!logs.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty" style="padding:28px"><div class="ei">📋</div><p>No history yet.</p></div></td></tr>'; return; }
+  const meds = getMeds();
+  tbody.innerHTML = logs.map(l => {
+    const med   = meds.find(m => m.id == l.medId) || {name:'Unknown',dose:'—'};
+    const badge = l.status === 'taken' ? '<span class="badge b-sage">✅ Taken</span>' : '<span class="badge b-rose">⚠️ Missed</span>';
+    const ta    = l.takenAt ? new Date(l.takenAt).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr><td><strong>${med.name}</strong></td><td>${med.dose}</td><td>${fmtTime(l.scheduledTime)} · ${fmtDate(l.date)}</td><td>${ta}</td><td>${badge}</td><td>${l.loggedBy||'Self'}</td></tr>`;
+  }).join('');
+}
+
+document.getElementById('log-search').addEventListener('input', e => renderLog(e.target.value));
+document.getElementById('export-csv').addEventListener('click', () => {
+  const meds = getMeds();
+  let csv = 'Date,Medicine,Dose,Scheduled,Taken At,Status,Logged By\n';
+  getLogs().sort((a,b)=>b.date.localeCompare(a.date)).forEach(l => {
+    const med = meds.find(m=>m.id==l.medId)||{name:'Unknown',dose:'—'};
+    csv += `${l.date},"${med.name}","${med.dose}",${l.scheduledTime},${l.takenAt||''},${l.status},${l.loggedBy||'Self'}\n`;
+  });
+  dlFile('meditrack_log.csv', csv, 'text/csv');
+  toast('Log exported!', 'success');
+});
+
+/* ══════════════════════════════════════════════
+   PATIENT PROFILE
+══════════════════════════════════════════════ */
+function renderPatientID() {
+  const pt   = getPatient();
+  const full = `${pt.firstName||''} ${pt.lastName||''}`.trim();
+  const init = ((pt.firstName||'P')[0]+(pt.lastName||'')[0]).toUpperCase();
+  const _pid = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  _pid('pid-av',     init);
+  _pid('pid-name',   full || '—');
+  _pid('pid-idnum',  `ID: ${pt.idNumber||'—'}`);
+  _pid('pid-age',    calcAge(pt.dob));
+  _pid('pid-blood',  pt.blood || '—');
+  _pid('pid-dob',    fmtDate(pt.dob));
+  _pid('pid-cond',   pt.condition  || '—');
+  _pid('pid-allerg', pt.allergies  || '—');
+  _pid('pid-ins',    pt.insurance  || '—');
+  _pid('pid-addr',   pt.address    || '—');
+  _pid('pid-cg',     pt.caregiverName ? `${pt.caregiverName} (${pt.caregiverRel||'Caregiver'})` : '—');
+  document.getElementById('pid-capbadge').innerHTML = pt.capMode === 'incapable'
+    ? '<span class="badge b-amber">🤝 Assisted</span>'
+    : '<span class="badge b-sage">✅ Self-managed</span>';
+  const nd = document.getElementById('notes-disp'); if (nd) nd.textContent = pt.notes || 'No notes yet.';
+  renderContacts();
+  updateSidebar();
+}
+
+document.getElementById('edit-pt-btn').addEventListener('click', () => {
+  const pt = getPatient();
+  document.getElementById('pt-fname').value  = pt.firstName  || '';
+  document.getElementById('pt-lname').value  = pt.lastName   || '';
+  document.getElementById('pt-dob').value    = pt.dob        || '';
+  document.getElementById('pt-blood').value  = pt.blood      || '';
+  document.getElementById('pt-cond').value   = pt.condition  || '';
+  document.getElementById('pt-allerg').value = pt.allergies  || '';
+  document.getElementById('pt-ins').value    = pt.insurance  || '';
+  document.getElementById('pt-addr').value   = pt.address    || '';
+  document.getElementById('pt-cgname').value = pt.caregiverName || '';
+  document.getElementById('pt-cgrel').value  = pt.caregiverRel  || '';
+  openModal('modal-patient');
+});
+
+document.getElementById('save-pt-btn').addEventListener('click', () => {
+  const fn = document.getElementById('pt-fname').value.trim();
+  if (!fn) { toast('First name is required.', 'warning'); return; }
+  const pt = getPatient();
+  savePatientLocal({...pt, firstName:fn, lastName:document.getElementById('pt-lname').value.trim(),
+    dob:document.getElementById('pt-dob').value, blood:document.getElementById('pt-blood').value,
+    condition:document.getElementById('pt-cond').value, allergies:document.getElementById('pt-allerg').value,
+    insurance:document.getElementById('pt-ins').value, address:document.getElementById('pt-addr').value,
+    caregiverName:document.getElementById('pt-cgname').value.trim(),
+    caregiverRel:document.getElementById('pt-cgrel').value
+  });
+  toast('Profile saved!', 'success');
+  closeModal('modal-patient');
+  renderPatientID();
+});
+
+document.getElementById('edit-notes-btn').addEventListener('click', () => {
+  document.getElementById('notes-input').value = getPatient().notes || '';
+  openModal('modal-notes');
+});
+document.getElementById('save-notes-btn').addEventListener('click', () => {
+  const notes = document.getElementById('notes-input').value;
+  savePatientLocal({...getPatient(), notes});
+  document.getElementById('notes-disp').textContent = notes || 'No notes yet.';
+  closeModal('modal-notes');
+  toast('Notes saved!', 'success');
+});
+
+/* Emergency contacts */
+document.getElementById('add-ec-btn').addEventListener('click', () => {
+  document.getElementById('ec-name').value = ''; document.getElementById('ec-phone').value = '';
+  openModal('modal-ec');
+});
+document.getElementById('save-ec-btn').addEventListener('click', () => {
+  const name = document.getElementById('ec-name').value.trim(), phone = document.getElementById('ec-phone').value.trim();
+  if (!name||!phone) { toast('Name and phone required.', 'warning'); return; }
+  const c = getContacts(); c.push({id:Date.now(),name,phone,relationship:document.getElementById('ec-rel').value});
+  saveContacts(c); toast('Contact added!', 'success'); closeModal('modal-ec'); renderContacts();
+});
+function renderContacts() {
+  const el = document.getElementById('ec-list');
+  const c  = getContacts();
+  if (!c.length) { el.innerHTML = '<div class="empty" style="padding:16px 0"><div class="ei">👤</div><p>No contacts yet.</p></div>'; return; }
+  const colors = ['var(--sage)','var(--sky)','var(--amber)','var(--rose)'];
+  el.innerHTML = c.map((x,i) => `<div class="ec-row">
+    <div class="ec-av" style="background:${colors[i%4]}22;color:${colors[i%4]}">${x.name[0].toUpperCase()}</div>
+    <div class="ec-info"><div class="ec-name">${x.name}</div><div class="ec-meta">${x.relationship}</div></div>
+    <div class="ec-phone">${x.phone}</div>
+    <button class="btn btn-danger btn-sm btn-icon" onclick="delContact(${x.id})" style="margin-left:8px">🗑️</button>
+  </div>`).join('');
+}
+function delContact(id) { saveContacts(getContacts().filter(c=>c.id!=id)); toast('Removed.','info'); renderContacts(); }
+window.delContact = delContact;
+
+/* ══════════════════════════════════════════════
+   FAMILY PORTAL
+══════════════════════════════════════════════ */
+document.getElementById('add-member-btn').addEventListener('click', () => {
+  document.getElementById('fm-name').value=''; document.getElementById('fm-phone').value='';
+  openModal('modal-member');
+});
+document.getElementById('save-member-btn').addEventListener('click', () => {
+  const name = document.getElementById('fm-name').value.trim();
+  if (!name) { toast('Name required.','warning'); return; }
+  const m = getMembers();
+  m.push({id:Date.now(),name,relationship:document.getElementById('fm-rel').value,phone:document.getElementById('fm-phone').value,access:document.getElementById('fm-access').value,addedAt:new Date().toISOString()});
+  saveMembers(m); addActivity(`Family member added: ${name}`); toast('Member added!','success'); closeModal('modal-member'); renderPortal();
+});
+function renderPortal() {
+  const m = getMembers();
+  const el = document.getElementById('member-list');
+  if (!m.length) { el.innerHTML = '<div class="empty"><div class="ei">👥</div><p>No members yet.</p></div>'; }
+  else {
+    const colors=['var(--sage)','var(--sky)','var(--amber)','var(--rose)'];
+    el.innerHTML = m.map((x,i)=>`<div class="member-card">
+      <div class="mem-av" style="background:${colors[i%4]}22;color:${colors[i%4]}">${x.name[0].toUpperCase()}</div>
+      <div style="flex:1"><div class="mem-name">${x.name}</div><div class="mem-sub">${x.relationship} · ${x.access}</div><div style="font-size:12px;color:var(--txt-muted)">● Offline</div></div>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="delMember(${x.id})">🗑️</button>
+    </div>`).join('');
+  }
+  // Summary
+  const today = todayStr(), meds = getMeds().filter(m=>m.active), logs = getLogs().filter(l=>l.date===today), now=nowTime();
+  let tot=0,tak=0;
+  meds.forEach(med=>med.times.forEach(t=>{if(t<=now){tot++;if(logs.find(l=>l.medId==med.id&&l.scheduledTime===t&&l.status==='taken'))tak++;}}));
+  const pct=tot>0?Math.round((tak/tot)*100):0;
+  const ppct = document.getElementById('portal-pct'); if (ppct) ppct.textContent=`${pct}% (${tak}/${tot} doses)`;
+  const bars=document.getElementById('portal-bars');
+  bars.innerHTML=meds.slice(0,5).map(med=>{
+    const mt=logs.filter(l=>l.medId==med.id&&l.status==='taken').length;
+    const pctM=Math.round((mt/med.times.length)*100);
+    const cls=pctM>=100?'pf-sage':pctM>=50?'pf-sky':'pf-amber';
+    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:600;color:var(--txt-h)">${med.name}</span><span style="color:var(--txt-s)">${mt}/${med.times.length}</span></div><div class="progress-track"><div class="progress-fill ${cls}" style="width:${pctM}%"></div></div></div>`;
+  }).join('');
+  // Activity feed
+  const feed = document.getElementById('activity-feed');
+  const acts = getActivity();
+  if (acts.length) {
+    feed.innerHTML = acts.slice(0,10).map(a=>`<div class="alert-item al-info" style="margin-bottom:10px">
+      <div class="al-icon">📌</div>
+      <div class="al-body"><div class="al-title">${a.msg}</div></div>
+      <div class="al-time">${new Date(a.ts).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`).join('');
+  }
+}
+function delMember(id){saveMembers(getMembers().filter(m=>m.id!=id));toast('Removed.','info');renderPortal();}
+window.delMember=delMember;
+
+/* ══════════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════════ */
+function initToggles() {
+  const s = uStore.get('settings') || {};
+  document.querySelectorAll('.toggle').forEach(t => {
+    const k = t.dataset.key;
+    if (k && s[k] === '0') t.classList.remove('on');
+    t.addEventListener('click', () => {
+      t.classList.toggle('on');
+      const st = uStore.get('settings') || {};
+      st[k] = t.classList.contains('on') ? '1' : '0';
+      uStore.set('settings', st);
+    });
+  });
+}
+
+document.getElementById('clear-log-btn').addEventListener('click', () => {
+  if (!confirm("Clear today's log?")) return;
+  saveLogs(getLogs().filter(l=>l.date!==todayStr()));
+  toast("Today's log cleared.",'info'); refreshDashboard();
+});
+document.getElementById('export-all-btn').addEventListener('click', () => {
+  dlFile('meditrack_backup.json', JSON.stringify({patient:getPatient(),meds:getMeds(),logs:getLogs(),contacts:getContacts(),members:getMembers(),exported:new Date().toISOString()},null,2),'application/json');
+  toast('Backup exported!','success');
+});
+document.getElementById('logout-btn').addEventListener('click', () => {
+  if (!confirm('Switch account?')) return;
+  gStore.del('session');
+  location.reload();
+});
+
+/* ══════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════ */
+function dlFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name; a.click();
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+(function init() {
+  const sid = gStore.get('session');
+  if (sid && getAccounts().find(a => a.id === sid)) {
+    CUR = sid;
+    launchApp();
+  } else {
+    renderSavedAccounts();
+  }
+})();
+
+// ══════════════════════════════════════════════════════
+// DARK MODE
+// ══════════════════════════════════════════════════════
+function applyDark(on) {
+  document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
+  const btn = document.getElementById('dark-toggle');
+  if (btn) btn.textContent = on ? '☀️' : '🌙';
+  const toggle = document.getElementById('dark-mode-toggle');
+  if (toggle) toggle.classList.toggle('on', on);
+}
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyDark(!isDark);
+  const s = gStore.get('settings') || {};
+  s.darkmode = isDark ? '0' : '1';
+  gStore.set('settings', s);
+}
+// Load saved dark mode preference
+(function() {
+  const s = gStore.get('settings') || {};
+  if (s.darkmode === '1') applyDark(true);
+})();
+
+
+
+</script>
+</body>
+</html>
